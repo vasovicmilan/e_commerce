@@ -1,0 +1,24 @@
+<% if (typeof faq !== 'undefined' && faq.length > 0) { %>
+  <div class="accordion" data-faq-accordion>
+    <% faq.forEach(function(item, index) { %>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button<%= index > 0 ? ' collapsed' : '' %>" 
+                  type="button" 
+                  data-bs-toggle="collapse" 
+                  data-bs-target="#faq_<%= index %>" 
+                  aria-expanded="<%= index === 0 ? 'true' : 'false' %>" 
+                  aria-controls="faq_<%= index %>">
+            <%= item.pitanje || item.question %>
+          </button>
+        </h3>
+        <div id="faq_<%= index %>" class="accordion-collapse collapse<%= index === 0 ? ' show' : '' %>" 
+             data-bs-parent="[data-faq-accordion]">
+          <div class="accordion-body">
+            <%= item.odgovor || item.answer %>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>

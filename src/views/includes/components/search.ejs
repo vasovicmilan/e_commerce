@@ -1,0 +1,11 @@
+<form action="<%= searchUrl %>" method="POST" role="search" data-search-form>
+  <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+  <div class="input-group input-group-sm">
+    <label for="searchInput" class="visually-hidden">Pretraži</label>
+    <input type="search" id="searchInput" name="search" class="form-control" 
+           placeholder="Pretraži..." value="<%= typeof search !== 'undefined' ? search : '' %>">
+    <button type="submit" class="btn btn-outline-secondary" aria-label="Pretraži">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
+</form>

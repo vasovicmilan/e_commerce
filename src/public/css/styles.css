@@ -1,0 +1,512 @@
+/* ============================================================
+   GLOBAL VARIJABLE (definisane u variables.css)
+   ============================================================ */
+
+/* ============================================================
+   ANIMACIJE I TRANZICIJE
+   ============================================================ */
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spinner-border {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.dropdown-menu {
+  animation: fadeInDown 0.2s ease-in-out;
+}
+
+.spinner-border {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  vertical-align: text-bottom;
+  border: 0.2em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}
+
+.animate-pulse {
+  animation: pulse 0.3s ease-in-out;
+}
+
+/* ============================================================
+   OSLOVNI ELEMENTI
+   ============================================================ */
+
+/* Navigacija – viši z-index od svega */
+.navbar {
+  z-index: 1030;
+  position: relative; /* da bi z-index radio */
+}
+
+.nav-link {
+  transition: all 0.2s ease-in-out;
+}
+.nav-link:hover,
+.nav-link:focus {
+  color: var(--brand-pink) !important;
+  text-decoration: none;
+}
+.nav-link.active {
+  color: var(--brand-pink) !important;
+  font-weight: 600;
+  border-bottom: none;
+}
+
+/* Dropdown meni – mora biti iznad sidebara */
+.dropdown-menu {
+  z-index: 1040 !important; /* iznad sidebara (1020) i navigacije (1030) */
+}
+.dropdown-item {
+  color: var(--bs-body-color);
+  background-color: transparent;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none !important;
+}
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--brand-pink-light);
+  color: var(--brand-pink-dark);
+  text-decoration: none;
+}
+.dropdown-item.active,
+.dropdown-item:active {
+  background-color: var(--brand-pink) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+.dropdown-item.active i,
+.dropdown-item:active i {
+  color: #ffffff !important;
+}
+.dropdown-item:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Sticky sidebar – ispod navigacije, iznad sadržaja */
+.checkout-sidebar {
+  position: sticky;
+  top: 80px; /* visina header-a + padding */
+  z-index: 800; /* ispod dropdown-a (1040), iznad običnog sadržaja */
+}
+@media (max-width: 991.98px) {
+  .checkout-sidebar {
+    position: static;
+    z-index: auto;
+  }
+}
+
+/* ============================================================
+   BADGE
+   ============================================================ */
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+a.badge,
+.badge a,
+a[class*="badge"] {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+a.badge:hover,
+.badge a:hover,
+a[class*="badge"]:hover {
+  text-decoration: underline !important;
+  opacity: 0.85;
+}
+.badge.bg-primary,
+.badge.bg-primary a {
+  color: #ffffff !important;
+  background-color: var(--brand-pink) !important;
+}
+.badge.bg-secondary,
+.badge.bg-secondary a {
+  color: #ffffff !important;
+  background-color: #6c757d !important;
+}
+.badge.bg-dark,
+.badge.bg-dark a {
+  color: #ffffff !important;
+  background-color: #212529 !important;
+}
+.badge.bg-light,
+.badge.bg-light a {
+  color: #212529 !important;
+  background-color: #f8f9fa !important;
+}
+
+/* ============================================================
+   LINKOVI (opšti)
+   ============================================================ */
+
+a:not(.btn):not(.dropdown-item):not(.nav-link):not(.breadcrumb-item a) {
+  color: var(--brand-pink);
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+a:not(.btn):not(.dropdown-item):not(.nav-link):not(.breadcrumb-item a):hover {
+  color: var(--brand-pink-dark);
+  text-decoration: underline;
+}
+a:not(.btn):not(.dropdown-item):not(.nav-link):not(.breadcrumb-item a):focus,
+a:not(.btn):not(.dropdown-item):not(.nav-link):not(.breadcrumb-item a):active {
+  color: var(--brand-pink-dark);
+  outline: none;
+  text-decoration: underline;
+}
+
+.breadcrumb-item a {
+  color: var(--brand-pink);
+  text-decoration: none;
+}
+.breadcrumb-item a:hover {
+  color: var(--brand-pink-dark);
+  text-decoration: underline;
+}
+.breadcrumb-item.active {
+  color: var(--bs-body-color);
+}
+
+.card-link {
+  color: var(--brand-pink);
+}
+.card-link:hover {
+  color: var(--brand-pink-dark);
+}
+
+.footer-link,
+footer a:not(.btn) {
+  color: #e4e4e4 !important;
+}
+.footer-link:hover,
+footer a:not(.btn):hover {
+  color: var(--brand-pink-light) !important;
+  text-decoration: underline;
+}
+
+.alert-link {
+  color: var(--brand-pink-dark);
+  font-weight: 600;
+}
+.alert-link:hover {
+  color: var(--brand-pink);
+}
+
+.list-group-item-action {
+  color: var(--bs-body-color);
+}
+.list-group-item-action:hover,
+.list-group-item-action:focus {
+  background-color: var(--brand-pink-light);
+  color: var(--brand-pink-dark);
+}
+.list-group-item.active {
+  background-color: var(--brand-pink);
+  border-color: var(--brand-pink);
+}
+
+.sidebar-nav .nav-link {
+  color: var(--bs-body-color);
+}
+.sidebar-nav .nav-link:hover,
+.sidebar-nav .nav-link.active {
+  color: var(--brand-pink);
+  background-color: var(--brand-pink-light);
+  border-radius: 0.375rem;
+}
+
+/* ============================================================
+   DUGMAD (prerađene primary varijante)
+   ============================================================ */
+
+.btn-primary {
+  --bs-btn-bg: var(--brand-pink) !important;
+  --bs-btn-border-color: var(--brand-pink) !important;
+  --bs-btn-hover-bg: var(--brand-pink-dark) !important;
+  --bs-btn-hover-border-color: var(--brand-pink-dark) !important;
+  --bs-btn-active-bg: var(--brand-pink-dark) !important;
+  --bs-btn-active-border-color: var(--brand-pink-dark) !important;
+  --bs-btn-disabled-bg: var(--brand-pink-light) !important;
+  --bs-btn-disabled-border-color: var(--brand-pink-light) !important;
+  background-color: var(--bs-btn-bg);
+  border-color: var(--bs-btn-border-color);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--brand-pink) !important;
+  --bs-btn-border-color: var(--brand-pink) !important;
+  --bs-btn-hover-bg: var(--brand-pink) !important;
+  --bs-btn-hover-border-color: var(--brand-pink) !important;
+  --bs-btn-active-bg: var(--brand-pink) !important;
+  --bs-btn-active-border-color: var(--brand-pink) !important;
+  color: var(--bs-btn-color);
+  border-color: var(--bs-btn-border-color);
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:active {
+  color: #fff !important;
+}
+a.btn-primary {
+  text-decoration: none;
+}
+a.btn-primary:hover {
+  background-color: var(--brand-pink-dark) !important;
+  border-color: var(--brand-pink-dark) !important;
+}
+.btn-primary:focus,
+.btn-outline-primary:focus {
+  box-shadow: 0 0 0 0.25rem rgba(233, 30, 99, 0.5) !important;
+}
+
+/* Dugmad za varijacije (btn-check) */
+.variation-btn {
+  transition: all 0.2s ease;
+}
+.btn-check:hover + .variation-btn {
+  background-color: var(--brand-pink-dark);
+  color: #fff;
+  border-color: var(--brand-pink-dark);
+}
+.btn-check:checked + .variation-btn {
+  background-color: var(--brand-pink);
+  color: #fff;
+  border-color: var(--brand-pink);
+  font-weight: 600;
+  box-shadow: 0 0 0 0.25rem rgba(233, 30, 99, 0.3);
+}
+.btn-check:disabled + .variation-btn {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================================
+   PAGINACIJA
+   ============================================================ */
+
+.page-link {
+  color: var(--brand-pink);
+  border-color: #dee2e6;
+  transition: all 0.2s ease;
+}
+.page-link:hover {
+  color: #ffffff !important;
+  background-color: var(--brand-pink-dark) !important;
+  border-color: var(--brand-pink-dark) !important;
+}
+.page-item.active .page-link {
+  color: #ffffff !important;
+  background-color: var(--brand-pink) !important;
+  border-color: var(--brand-pink) !important;
+  font-weight: 600;
+}
+.page-item.disabled .page-link {
+  color: #6c757d;
+  pointer-events: none;
+  background-color: #fff;
+  border-color: #dee2e6;
+}
+
+/* ============================================================
+   NAV-TABS
+   ============================================================ */
+
+.nav-tabs .nav-link {
+  color: var(--bs-body-color);
+  border: 1px solid transparent;
+}
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link:focus {
+  border-color: var(--brand-pink-light) var(--brand-pink-light) transparent;
+  color: var(--brand-pink);
+}
+.nav-tabs .nav-link.active {
+  color: var(--brand-pink);
+  border-color: var(--brand-pink-light) var(--brand-pink-light) #fff;
+}
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+
+.progress {
+  height: 0.5rem;
+  background-color: #e9ecef;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background-color: var(--brand-pink, #e91e63);
+  transition: width 0.3s ease;
+  border-radius: 0.25rem;
+}
+.progress-bar[data-progress-bar] {
+  width: 0%;
+  transition: width 0.6s ease;
+}
+
+/* ============================================================
+   UPLOAD PREVIEW SLIKE
+   ============================================================ */
+
+.form-img-preview {
+  max-height: 150px;
+  width: auto;
+  border-radius: 0.25rem;
+  border: 1px solid #dee2e6;
+  padding: 0.25rem;
+}
+
+/* ============================================================
+   BLOG SADRŽAJ
+   ============================================================ */
+
+.post-content {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.post-content img {
+  max-width: 100%;
+  height: auto;
+}
+.post-content table {
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+.post-content figure {
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+/* ============================================================
+   OVERLAY ZA SLIKE (preko celog ekrana)
+   ============================================================ */
+
+.product-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.product-overlay .btn-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  filter: brightness(0) invert(1);
+}
+.product-overlay img {
+  max-height: 90vh;
+  max-width: 95vw;
+  object-fit: contain;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  border-radius: 8px;
+}
+body.overflow-hidden {
+  overflow: hidden;
+}
+
+/* ============================================================
+   THUMBNAIL DUGMAD
+   ============================================================ */
+
+.thumb-btn {
+  transition: opacity 0.2s ease;
+}
+.thumb-btn:hover {
+  opacity: 0.8;
+}
+.thumb-btn:focus-visible {
+  outline: 2px solid var(--brand-pink);
+  outline-offset: 2px;
+}
+.thumb-btn .img-thumbnail {
+  height: 80px;
+  object-fit: cover;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+.thumb-btn:hover .img-thumbnail {
+  border-color: var(--brand-pink-light);
+}
+.thumb-btn:focus-visible .img-thumbnail {
+  border-color: var(--brand-pink);
+}
+
+/* ============================================================
+   Toggle Mere dugmad
+   ============================================================ */
+
+[data-toggle-measurements],
+[data-toggle-measurements-edit] {
+  transition: all 0.2s;
+}
+
+/* ============================================================
+   TABELA SLIČICE
+   ============================================================ */
+
+.table-img-thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+}
+
+/* ============================================================
+   POMOĆNE KLASE
+   ============================================================ */
+
+.d-none {
+  display: none !important;
+}
+.text-primary {
+  color: var(--brand-pink) !important;
+}
+.text-primary:hover {
+  color: var(--brand-pink-dark) !important;
+}
+[data-bs-toggle="tooltip"] {
+  cursor: help;
+}
+.btn[data-submit-btn]:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

@@ -1,0 +1,225 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main>
+  <%- include("../includes/flash-messages") %>
+  
+  <!-- Hero Section -->
+  <section class="bg-primary text-white">
+    <div class="container">
+      <div class="row align-items-center py-5">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <h1 class="display-4 fw-bold lh-sm">Kvalitetna ženska garderoba</h1>
+          <p class="lead mb-4">Helanke, fitness kompleti, farmerice i pantalone. Brza isporuka i sigurna kupovina.</p>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="/prodavnica" class="btn btn-light btn-lg">Pogledaj ponudu</a>
+            <a href="/prodavnica/akcija" class="btn btn-outline-light btn-lg">Trenutne akcije</a>
+          </div>
+        </div>
+        <div class="col-lg-6 text-center">
+          <img src="/images/site/tophelanke_hero.webp" alt="TopHelanke kolekcija" class="img-fluid rounded" width="600" height="400" loading="eager">
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Benefits Bar -->
+  <section class="py-4 bg-white border-bottom">
+    <div class="container">
+      <div class="row g-3 text-center">
+        <div class="col-6 col-md-3">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-truck fs-2 text-primary mb-2"></i>
+            <h3 class="h6 mb-1">Brza isporuka</h3>
+            <p class="small text-muted mb-0">1-3 radna dana</p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-shield-check fs-2 text-primary mb-2"></i>
+            <h3 class="h6 mb-1">Sigurna kupovina</h3>
+            <p class="small text-muted mb-0">Plaćanje pouzećem</p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-arrow-return-left fs-2 text-primary mb-2"></i>
+            <h3 class="h6 mb-1">Laka zamena</h3>
+            <p class="small text-muted mb-0">14 dana za povraćaj</p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-headset fs-2 text-primary mb-2"></i>
+            <h3 class="h6 mb-1">Podrška</h3>
+            <p class="small text-muted mb-0">Viber / WhatsApp</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Istaknuti proizvodi -->
+  <% if (data.featuredItems && data.featuredItems.length > 0) { %>
+    <section class="py-5">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="h3 mb-1">Istaknuti proizvodi</h2>
+            <p class="text-muted mb-0">Najpopularniji modeli koje preporučujemo</p>
+          </div>
+          <a href="/prodavnica/istaknuto" class="btn btn-outline-primary d-none d-md-inline-flex">
+            Pogledaj sve <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+        <div class="row g-3">
+          <% data.featuredItems.forEach(function(item) { %>
+            <div class="col-6 col-md-3">
+              <%- include("../includes/components/card-item", { item: item }) %>
+            </div>
+          <% }) %>
+        </div>
+        <div class="text-center mt-4 d-md-none">
+          <a href="/prodavnica/istaknuto" class="btn btn-outline-primary">Pogledaj sve</a>
+        </div>
+      </div>
+    </section>
+  <% } %>
+  
+  <!-- Social Proof - Testimonials -->
+  <% if (data.testimonials && data.testimonials.length > 0) { %>
+    <section class="py-5 bg-light">
+      <div class="container">
+        <div class="text-center mb-4">
+          <h2 class="h3 mb-1">Šta kažu naši kupci</h2>
+          <p class="text-muted">Iskustva zadovoljnih kupaca</p>
+        </div>
+        <div class="row g-3">
+          <% data.testimonials.slice(0, 3).forEach(function(testimonial) { %>
+            <div class="col-md-4">
+              <%- include("../includes/components/card-testimonial", { testimonial: testimonial }) %>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+  <% } %>
+  
+  <!-- Akcija -->
+  <% if (data.actionedItems && data.actionedItems.length > 0) { %>
+    <section class="py-5">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="h3 mb-1">Na akciji</h2>
+            <p class="text-muted mb-0">Iskoristite snižene cene</p>
+          </div>
+          <a href="/prodavnica/akcija" class="btn btn-outline-danger d-none d-md-inline-flex">
+            Pogledaj sve <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+        <div class="row g-3">
+          <% data.actionedItems.forEach(function(item) { %>
+            <div class="col-6 col-md-3">
+              <%- include("../includes/components/card-item", { item: item }) %>
+            </div>
+          <% }) %>
+        </div>
+        <div class="text-center mt-4 d-md-none">
+          <a href="/prodavnica/akcija" class="btn btn-outline-danger">Pogledaj sve</a>
+        </div>
+      </div>
+    </section>
+  <% } %>
+  
+  <!-- Blog -->
+  <% if (data.featuredPosts && data.featuredPosts.length > 0) { %>
+    <section class="py-5 bg-light">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="h3 mb-1">Najnovije sa bloga</h2>
+            <p class="text-muted mb-0">Saveti, novosti i modni vodiči</p>
+          </div>
+          <a href="/blog" class="btn btn-outline-primary d-none d-md-inline-flex">
+            Ceo blog <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+        <div class="row g-3">
+          <% data.featuredPosts.forEach(function(post) { %>
+            <div class="col-md-4">
+              <%- include("../includes/components/card-post", { post: post }) %>
+            </div>
+          <% }) %>
+        </div>
+        <div class="text-center mt-4 d-md-none">
+          <a href="/blog" class="btn btn-outline-primary">Ceo blog</a>
+        </div>
+      </div>
+    </section>
+  <% } %>
+  
+  <!-- O nama + Kontakt -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card border-0 bg-primary bg-opacity-10 h-100">
+            <div class="card-body p-4">
+              <i class="bi bi-info-circle fs-2 text-primary mb-3"></i>
+              <h2 class="h4">O nama</h2>
+              <p class="text-muted">Saznajte više o našem brendu, misiji i vrednostima.</p>
+              <a href="/o-nama" class="btn btn-outline-primary">Saznaj više</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-0 bg-primary bg-opacity-10 h-100">
+            <div class="card-body p-4">
+              <i class="bi bi-envelope fs-2 text-primary mb-3"></i>
+              <h2 class="h4">Kontaktirajte nas</h2>
+              <p class="text-muted">Imate pitanje? Tu smo da pomognemo.</p>
+              <a href="/kontakt" class="btn btn-outline-primary">Pošalji poruku</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Partnerstvo -->
+  <section class="py-5 bg-light">
+    <div class="container text-center">
+      <h2 class="h3 mb-3">Postanite partner</h2>
+      <p class="text-muted mb-4">Pridružite se našem partnerskom programu i zarađujte kroz affiliate linkove i sopstveni shop.</p>
+      <a href="/partnerstva" class="btn btn-primary btn-lg">Saznaj više o partnerstvu</a>
+    </div>
+  </section>
+  
+  <!-- Newsletter -->
+  <section class="py-5 bg-primary text-white">
+    <div class="container text-center">
+      <h2 class="h3 mb-2">Prijavite se na newsletter</h2>
+      <p class="mb-4">Budite prvi koji će saznati o akcijama, novim proizvodima i ekskluzivnim popustima.</p>
+      <form method="POST" action="/newsletter/prijava" class="row justify-content-center" data-form>
+        <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+        <div class="d-none" aria-hidden="true">
+          <input type="text" name="nickname" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="col-md-5 mb-2 mb-md-0">
+          <label for="newsletterEmail" class="visually-hidden">Email adresa</label>
+          <input type="email" id="newsletterEmail" name="email" class="form-control form-control-lg" 
+                 placeholder="Vaša email adresa" required>
+        </div>
+        <div class="col-md-auto">
+          <button type="submit" class="btn btn-light btn-lg" data-submit-btn>
+            <span data-submit-label>Prijavi se</span>
+            <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<%- include("../includes/footer") %>

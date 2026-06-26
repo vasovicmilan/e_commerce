@@ -1,0 +1,133 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container py-4">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+  
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Nazad na blog -->
+      <div class="mb-3">
+        <a href="/blog" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Nazad na blog
+        </a>
+      </div>
+      
+      <article>
+        <!-- Slika i opis -->
+        <% if (data.post.slika && data.post.slika.url) { %>
+          <figure class="mb-4">
+            <img src="/images/posts/<%= data.post.slika.url %>" 
+                 alt="<%= data.post.slika.opis || data.post.naziv %>" 
+                 class="img-fluid rounded w-100" 
+                 loading="eager" 
+                 width="800" height="450">
+            <% if (data.post.slika.opis) { %>
+              <figcaption class="text-muted small mt-1 text-center">
+                <i class="bi bi-camera"></i> <%= data.post.slika.opis %>
+              </figcaption>
+            <% } %>
+          </figure>
+        <% } %>
+        
+        <!-- Naslov -->
+        <h1 class="h2 mb-3"><%= data.post.naziv %></h1>
+        
+        <!-- Meta informacije -->
+        <div class="d-flex flex-wrap align-items-center text-muted small gap-3 mb-3">
+          <span><i class="bi bi-person"></i> <%= data.post.autor %></span>
+          <time datetime="<%= data.post.datum %>"><i class="bi bi-calendar"></i> <%= data.post.datum %></time>
+          <% if (data.post.vremeCitanja) { %>
+            <span><i class="bi bi-clock"></i> <%= data.post.vremeCitanja %> min čitanja</span>
+          <% } %>
+          <% if (data.post.azuriran && data.post.azuriran !== data.post.datum) { %>
+            <span><i class="bi bi-pencil"></i> Ažurirano: <%= data.post.azuriran %></span>
+          <% } %>
+        </div>
+        
+        <!-- Kratak opis -->
+        <% if (data.post.kratakOpis) { %>
+          <p class="lead"><%= data.post.kratakOpis %></p>
+        <% } %>
+        
+        <!-- Kategorije -->
+        <% if (data.post.kategorije && data.post.kategorije.length > 0) { %>
+          <div class="d-flex flex-wrap gap-1 mb-4">
+            <% data.post.kategorije.forEach(function(cat) { %>
+              <a href="/blog/kategorija/<%= cat.slug %>" class="badge bg-primary text-decoration-none"><%= cat.naziv %></a>
+            <% }) %>
+          </div>
+        <% } %>
+        
+        <!-- Glavni sadržaj -->
+        <div class="content post-content">
+          <%- data.post.sadrzaj || data.post.opis || '<p class="text-muted">Nema sadržaja</p>' %>
+        </div>
+        
+        <!-- Tagovi -->
+        <% if (data.post.tagovi && data.post.tagovi.length > 0) { %>
+          <div class="d-flex flex-wrap gap-1 mt-4 pt-3 border-top">
+            <span class="text-muted me-1">Tagovi:</span>
+            <% data.post.tagovi.forEach(function(tag, index) { %>
+              <a href="/blog/tag/<%= tag.slug %>/<%= tag.tip %>" class="badge bg-secondary text-decoration-none"><%= tag.naziv %></a>
+              <%= index < data.post.tagovi.length - 1 ? ' ' : '' %>
+            <% }) %>
+          </div>
+        <% } %>
+      </article>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Pretraga -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <form action="/blog/pretraga" method="GET" role="search">
+            <label for="blogPostSearch" class="visually-hidden">Pretraži blog</label>
+            <div class="input-group">
+              <input type="search" id="blogPostSearch" name="q" class="form-control" placeholder="Pretraži blog...">
+              <button type="submit" class="btn btn-primary" aria-label="Pretraži">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Kategorije -->
+      <% if (data.categories && data.categories.length > 0) { %>
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2 class="h6 card-title mb-0">Kategorije</h2>
+          </div>
+          <div class="list-group list-group-flush">
+            <% data.categories.forEach(function(cat) { %>
+              <a href="/blog/kategorija/<%= cat.slug %>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <%= cat.naziv %>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- Tagovi -->
+      <% if (data.tags && data.tags.length > 0) { %>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="h6 card-title mb-0">Tagovi</h2>
+          </div>
+          <div class="card-body">
+            <div class="d-flex flex-wrap gap-1">
+              <% data.tags.forEach(function(tag) { %>
+                <a href="/blog/tag/<%= tag.slug %>/<%= tag.tip || tag.type %>" class="badge bg-light text-dark text-decoration-none"><%= tag.naziv %></a>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<%- include("../includes/footer") %>

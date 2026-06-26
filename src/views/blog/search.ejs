@@ -1,0 +1,59 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container py-4">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+  
+  <div class="row">
+    <div class="col-lg-8">
+      <h1 class="h3 mb-4">Pretraga: "<%= data.search %>"</h1>
+      
+      <div class="card mb-4">
+        <div class="card-body">
+          <form action="/blog/pretraga" method="GET" role="search">
+            <label for="blogSearchAgain" class="visually-hidden">Pretraži blog</label>
+            <div class="input-group">
+              <input type="search" id="blogSearchAgain" name="q" class="form-control" 
+                     value="<%= data.search %>" placeholder="Pretraži blog...">
+              <button type="submit" class="btn btn-primary" aria-label="Pretraži"><i class="bi bi-search"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <% if (data.posts && data.posts.length > 0) { %>
+        <p class="text-muted mb-3">Pronađeno: <%= data.total || data.posts.length %> rezultata</p>
+        <div class="row g-3">
+          <% data.posts.forEach(function(post) { %>
+            <div class="col-md-6">
+              <%- include("../includes/components/card-post", { post: post }) %>
+            </div>
+          <% }) %>
+        </div>
+        <%- include("../includes/pagination") %>
+      <% } else { %>
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-search fs-1 d-block mb-2"></i>
+          <p>Nema rezultata za "<%= data.search %>"</p>
+          <a href="/blog" class="btn btn-outline-primary">Nazad na blog</a>
+        </div>
+      <% } %>
+    </div>
+    
+    <div class="col-lg-4">
+      <% if (data.categories && data.categories.length > 0) { %>
+        <div class="card">
+          <div class="card-header"><h2 class="h6 card-title mb-0">Kategorije</h2></div>
+          <div class="list-group list-group-flush">
+            <% data.categories.forEach(function(cat) { %>
+              <a href="/blog/kategorija/<%= cat.slug %>" class="list-group-item list-group-item-action"><%= cat.naziv %></a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<%- include("../includes/footer") %>

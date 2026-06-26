@@ -1,0 +1,13 @@
+<%
+subject = `Uspešno ste prijavljeni na newsletter - ${SITE_NAME}`;
+body = `
+  <p>Zdravo ${firstName || ''},</p>
+  <p>Hvala što ste se prijavili na naš newsletter. Obaveštavaćemo vas o novostima, akcijama i najnovijim proizvodima.</p>
+  <p>U svakom trenutku možete se odjaviti klikom na link ispod:</p>
+  <p style="text-align:center; margin:25px 0;">
+    <a href="${unsubscribeUrl}" style="color:#e91e63;">Odjavi me</a>
+  </p>
+  <p style="color:#999; font-size:14px;">Ovo je automatska poruka.</p>
+`;
+%>
+<%- include("_layout") %>

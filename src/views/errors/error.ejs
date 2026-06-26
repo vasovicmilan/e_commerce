@@ -1,0 +1,36 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container py-5">
+  <div class="row justify-content-center text-center">
+    <div class="col-md-6">
+      <div class="mb-4">
+        <span class="display-1 fw-bold text-muted"><%= data.statusCode || 500 %></span>
+      </div>
+      <h1 class="h3 mb-3"><%= data.errorMsg || "Došlo je do greške" %></h1>
+      <p class="text-muted mb-4">Stranica koju tražite nije dostupna ili je došlo do interne greške.</p>
+      <div class="d-flex justify-content-center gap-2">
+        <a href="/" class="btn btn-primary">
+          <i class="bi bi-house"></i> Početna
+        </a>
+        <a href="/prodavnica" class="btn btn-outline-secondary">
+          <i class="bi bi-shop"></i> Prodavnica
+        </a>
+        <a href="/kontakt" class="btn btn-outline-secondary">
+          <i class="bi bi-envelope"></i> Kontakt
+        </a>
+      </div>
+      <% if (isDevelopment && data.errorDetails) { %>
+        <div class="mt-5 text-start">
+          <div class="card bg-light">
+            <div class="card-body">
+              <pre class="small mb-0"><%= data.errorDetails %></pre>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<%- include("../includes/footer") %>

@@ -1,0 +1,32 @@
+<%- include('../includes/head') %>
+<%- include('../includes/navigation') %>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm border-0 text-center">
+        <div class="card-body p-5">
+          <div class="mb-4">
+            <i class="bi bi-x-circle-fill fs-1 text-danger"></i>
+          </div>
+          <h1 class="h3 mb-3">Porudžbina otkazana</h1>
+          <p class="text-muted mb-4">
+            Uspešno ste otkazali porudžbinu. Ukoliko ste već izvršili uplatu,
+            sredstva će vam biti vraćena u skladu sa našim uslovima poslovanja.
+          </p>
+          <hr class="my-4">
+          <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+            <a href="/prodavnica" class="btn btn-primary">
+              <i class="bi bi-bag me-2"></i>Nastavi kupovinu
+            </a>
+            <a href="/" class="btn btn-outline-secondary">
+              <i class="bi bi-house-door me-2"></i>Početna
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../includes/footer') %>

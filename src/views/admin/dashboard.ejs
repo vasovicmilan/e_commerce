@@ -1,0 +1,110 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container-fluid py-4">
+  <h1 class="h3 mb-4">Dashboard</h1>
+  
+  <div class="row g-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1">Proizvoda</p>
+              <p class="h2 mb-0"><%= data.stats?.items?.total || 0 %></p>
+              <small class="text-success"><%= data.stats?.items?.published || 0 %> objavljenih</small>
+            </div>
+            <i class="bi bi-box fs-2 text-primary"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1">Porudžbina</p>
+              <p class="h2 mb-0"><%= data.stats?.orders?.total || 0 %></p>
+              <small class="text-success"><%= data.stats?.orders?.monthlyRevenue || 0 %> RSD (30 dana)</small>
+            </div>
+            <i class="bi bi-cart fs-2 text-success"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1">Korisnika</p>
+              <p class="h2 mb-0"><%= data.stats?.users?.total || 0 %></p>
+              <small class="text-success">+<%= data.stats?.users?.newThisMonth || 0 %> ovog meseca</small>
+            </div>
+            <i class="bi bi-people fs-2 text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1">Prihod</p>
+              <p class="h2 mb-0"><%= data.stats?.orders?.totalRevenue || 0 %></p>
+              <small class="text-muted">Ukupno</small>
+            </div>
+            <i class="bi bi-graph-up fs-2 text-warning"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row g-4 mt-2">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Porudžbine po statusu</h5>
+        </div>
+        <div class="card-body">
+          <% const statuses = data.stats?.orders?.byStatusList || []; %>
+          <% if (statuses.length) { %>
+            <dl class="row mb-0">
+              <% statuses.forEach(function(item) { %>
+                <dt class="col-sm-8 text-muted small"><%= item.label %></dt>
+                <dd class="col-sm-4 text-end"><%= item.count %></dd>
+              <% }) %>
+            </dl>
+          <% } else { %>
+            <p class="text-muted mb-0">Nema podataka</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Brzi linkovi</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="/admin/artikli" class="btn btn-outline-primary"><i class="bi bi-box"></i> Artikli</a>
+            <a href="/admin/porudzbine" class="btn btn-outline-success"><i class="bi bi-cart"></i> Porudžbine</a>
+            <a href="/admin/korisnici" class="btn btn-outline-info"><i class="bi bi-people"></i> Korisnici</a>
+            <a href="/admin/kuponi" class="btn btn-outline-warning"><i class="bi bi-ticket"></i> Kuponi</a>
+            <a href="/admin/blog" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Blog</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include("../includes/footer") %>

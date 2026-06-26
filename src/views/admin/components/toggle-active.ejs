@@ -1,0 +1,11 @@
+<form method="POST" action="/admin/newsletter/<%= data.newsletterId %>/status" data-form>
+  <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+  <input type="hidden" name="_method" value="PUT">
+  <input type="hidden" name="isActive" value="<%= data.isActive ? 'false' : 'true' %>">
+  
+  <button type="submit" class="btn btn-sm <%= data.isActive ? 'btn-outline-danger' : 'btn-outline-success' %> w-100" data-submit-btn>
+    <i class="bi bi-<%= data.isActive ? 'x-circle' : 'check-circle' %>"></i>
+    <span data-submit-label><%= data.isActive ? 'Deaktiviraj' : 'Aktiviraj' %></span>
+    <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+  </button>
+</form>

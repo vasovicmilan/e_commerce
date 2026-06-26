@@ -1,0 +1,220 @@
+<header class="bg-white border-bottom sticky-top shadow-sm">
+  <nav class="navbar navbar-expand-lg" aria-label="Glavna navigacija">
+    <div class="container">
+      <!-- Logo / Brand -->
+      <a class="navbar-brand fw-bold text-primary" href="/">
+        <i class="bi bi-bag-check-fill me-2"></i>
+        <%= typeof SITE_NAME !== 'undefined' ? SITE_NAME : 'TopHelanke' %>
+      </a>
+      
+      <!-- Mobile toggle button -->
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" 
+              aria-controls="mainNav" aria-expanded="false" aria-label="Otvori navigaciju">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <!-- Main Navigation -->
+      <div class="collapse navbar-collapse" id="mainNav">
+        <!-- Left menu items - isti za sve -->
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath === '/prodavnica') ? 'active fw-semibold' : '' %>" href="/prodavnica">
+              <i class="bi bi-shop me-1"></i> Prodavnica
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/blog')) ? 'active fw-semibold' : '' %>" href="/blog">
+              <i class="bi bi-newspaper me-1"></i> Blog
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath === '/kontakt') ? 'active fw-semibold' : '' %>" href="/kontakt">
+              <i class="bi bi-envelope me-1"></i> Kontakt
+            </a>
+          </li>
+        </ul>
+        
+        <!-- Right side items -->
+        <div class="d-flex align-items-center gap-2">
+          
+          <!-- Search form - desktop -->
+          <form action="/prodavnica/pretraga" method="GET" class="d-none d-lg-flex me-2" role="search">
+            <div class="input-group input-group-sm">
+              <input type="search" name="q" class="form-control" placeholder="Pretraži..." 
+                     aria-label="Pretraži proizvode" style="width: 200px;">
+              <button type="submit" class="btn btn-outline-secondary" aria-label="Pretraži">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+          </form>
+          
+          <!-- Mobile search icon -->
+          <a href="#" class="d-lg-none btn btn-outline-secondary btn-sm" id="mobileSearchToggle" aria-label="Pretraži">
+            <i class="bi bi-search"></i>
+          </a>
+          
+          <!-- Cart - dostupan svima -->
+          <a href="/prodavnica/korpa" class="btn btn-outline-primary btn-sm position-relative" aria-label="Korpa">
+            <i class="bi bi-cart3"></i>
+            <% const cartCountValue = typeof cartCount !== 'undefined' ? cartCount : 0; %>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger <%= cartCountValue === 0 ? 'd-none' : '' %>" data-cart-count>
+              <%= cartCountValue %>
+              <span class="visually-hidden">stavki u korpi</span>
+            </span>
+          </a>
+          
+          <!-- ==================== ULOGOVAN KORISNIK ==================== -->
+          <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2" 
+                      type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle"></i>
+                <span class="d-none d-sm-inline"><%= typeof userName !== 'undefined' ? userName : 'Moj nalog' %></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                
+                <!-- === OSNOVNI MENI (svaki ulogovani korisnik) === -->
+                <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/profil/moj-profil') ? 'active bg-light' : '' %>" href="/profil/moj-profil">
+                  <i class="bi bi-person me-2"></i>Moj profil
+                </a></li>
+                <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/profil/porudzbine') ? 'active bg-light' : '' %>" href="/profil/porudzbine">
+                  <i class="bi bi-box-seam me-2"></i>Porudžbine
+                </a></li>
+                <li><a class="dropdown-item" href="/profil/zelje">
+                  <i class="bi bi-heart me-2"></i>Lista želja
+                </a></li>
+                <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/profil/podesavanja') ? 'active bg-light' : '' %>" href="/profil/podesavanja">
+                  <i class="bi bi-gear me-2"></i>Podešavanja
+                </a></li>
+                
+                <!-- === PARTNER MENI (samo za partnere) === -->
+                <% if (typeof isPartner !== 'undefined' && isPartner === true) { %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item fw-semibold <%= (typeof currentPath !== 'undefined' && currentPath === '/partner/dashboard') ? 'active bg-light' : '' %>" href="/partner/dashboard">
+                    <i class="bi bi-briefcase me-2"></i>Partner Dashboard
+                  </a></li>
+                  <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/partner/prodavnica') ? 'active bg-light' : '' %>" href="/partner/prodavnica">
+                    <i class="bi bi-shop me-2"></i>Moja Prodavnica
+                  </a></li>
+                  <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/partner/zarada') ? 'active bg-light' : '' %>" href="/partner/zarada">
+                    <i class="bi bi-cash-stack me-2"></i>Zarada i provizije
+                  </a></li>
+                  <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/partner/statistika') ? 'active bg-light' : '' %>" href="/partner/statistika">
+                    <i class="bi bi-graph-up me-2"></i>Statistika
+                  </a></li>
+                <% } %>
+                
+                <!-- === ADMIN MENI (samo za administratore) === -->
+                <% if (typeof isAdmin !== 'undefined' && isAdmin === true) { %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item text-danger fw-semibold <%= (typeof currentPath !== 'undefined' && currentPath === '/admin/dashboard') ? 'active bg-light' : '' %>" href="/admin/dashboard">
+                    <i class="bi bi-shield-lock-fill me-2"></i>Admin Dashboard
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/kategorije')) ? 'active bg-light' : '' %>" href="/admin/kategorije">
+                    <i class="bi bi-tags me-2"></i>Kategorije
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/tagovi')) ? 'active bg-light' : '' %>" href="/admin/tagovi">
+                    <i class="bi bi-tag me-2"></i>Tagovi
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/artikli')) ? 'active bg-light' : '' %>" href="/admin/artikli">
+                    <i class="bi bi-box me-2"></i>Artikli
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/blog')) ? 'active bg-light' : '' %>" href="/admin/blog">
+                    <i class="bi bi-newspaper me-2"></i>Blog objave
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/korisnici')) ? 'active bg-light' : '' %>" href="/admin/korisnici">
+                    <i class="bi bi-people me-2"></i>Korisnici
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/kupci')) ? 'active bg-light' : '' %>" href="/admin/kupci">
+                    <i class="bi bi-person-badge me-2"></i>Kupci (customers)
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/porudzbine')) ? 'active bg-light' : '' %>" href="/admin/porudzbine">
+                    <i class="bi bi-cart-check me-2"></i>Porudžbine
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/privremene-porudzbine')) ? 'active bg-light' : '' %>" href="/admin/privremene-porudzbine">
+                    <i class="bi bi-clock-history me-2"></i>Privremene porudžbine
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/kuponi')) ? 'active bg-light' : '' %>" href="/admin/kuponi">
+                    <i class="bi bi-ticket-perforated me-2"></i>Kuponi
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/kontakt')) ? 'active bg-light' : '' %>" href="/admin/kontakt">
+                    <i class="bi bi-envelope-paper me-2"></i>Kontakt poruke
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/newsletter')) ? 'active bg-light' : '' %>" href="/admin/newsletter">
+                    <i class="bi bi-send me-2"></i>Newsletter
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/testimoniali')) ? 'active bg-light' : '' %>" href="/admin/testimoniali">
+                    <i class="bi bi-star me-2"></i>Testimonijali
+                  </a></li>
+                  
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/uloge')) ? 'active bg-light' : '' %>" href="/admin/uloge">
+                    <i class="bi bi-shield me-2"></i>Uloge (role)
+                  </a></li>
+                  
+                  <!-- DODATA STAVKA: Istorija partnera -->
+                  <li><a class="dropdown-item text-danger <%= (typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/istorija')) ? 'active bg-light' : '' %>" href="/admin/istorija">
+                    <i class="bi bi-clock-history me-2"></i>Istorija partnera
+                  </a></li>
+                <% } %>
+                
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="/auth/odjava">
+                  <i class="bi bi-box-arrow-right me-2"></i>Odjava
+                </a></li>
+              </ul>
+            </div>
+          
+          <!-- ==================== GOST (NIJE ULOGOVAN) ==================== -->
+          <% } else { %>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2" 
+                      type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person"></i>
+                <span class="d-none d-sm-inline">Nalog</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/prijava') ? 'active bg-light' : '' %>" href="/auth/prijava">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>Prijava
+                </a></li>
+                <li><a class="dropdown-item <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/registracija') ? 'active bg-light' : '' %>" href="/auth/registracija">
+                  <i class="bi bi-person-plus me-2"></i>Registracija
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/auth/zaboravljena-lozinka">
+                  <i class="bi bi-question-circle me-2"></i>Zaboravili ste lozinku?
+                </a></li>
+              </ul>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Mobile search bar -->
+<div class="d-lg-none bg-white border-bottom py-2 d-none" id="mobileSearchBar">
+  <div class="container">
+    <form action="/prodavnica/pretraga" method="GET" class="w-100" role="search">
+      <div class="input-group">
+        <input type="search" name="q" class="form-control" placeholder="Pretraži proizvode..." 
+               aria-label="Pretraži proizvode">
+        <button type="submit" class="btn btn-primary" aria-label="Pretraži">
+          <i class="bi bi-search"></i> Pretraži
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

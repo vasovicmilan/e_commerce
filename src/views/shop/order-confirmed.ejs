@@ -1,0 +1,43 @@
+<%- include('../includes/head') %>
+<%- include('../includes/navigation') %>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm border-0 text-center">
+        <div class="card-body p-5">
+          <div class="mb-4">
+            <i class="bi bi-check-circle-fill fs-1 text-success"></i>
+          </div>
+          <h1 class="h3 mb-3">Porudžbina potvrđena!</h1>
+          <p class="text-muted mb-4">
+            Vaša porudžbina je uspešno potvrđena. Ukupan iznos:
+            <strong><%= data.totalPrice %> RSD</strong>.
+          </p>
+          <div class="alert alert-success">
+            <i class="bi bi-info-circle me-2"></i>
+            Oznaka porudžbine: <strong><%= data.orderId %></strong>
+          </div>
+          <% if (data.cancelToken) { %>
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Sačuvajte ovaj link za otkazivanje porudžbine:<br>
+              <a href="/prodavnica/porudzbina/otkazi?token=<%= data.cancelToken %>" class="text-break">
+                /prodavnica/porudzbina/otkazi?token=<%= data.cancelToken %>
+              </a>
+            </div>
+          <% } %>
+          <hr class="my-4">
+          <a href="/profil/porudzbine" class="btn btn-outline-primary me-2">
+            <i class="bi bi-list-ul me-2"></i>Moje porudžbine
+          </a>
+          <a href="/" class="btn btn-primary">
+            <i class="bi bi-house-door me-2"></i>Početna
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../includes/footer') %>

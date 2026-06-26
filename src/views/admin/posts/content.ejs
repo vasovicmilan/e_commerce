@@ -1,0 +1,164 @@
+<%- include("../../includes/head") %>
+<%- include("../../includes/navigation") %>
+
+<main class="container-fluid py-4" data-post-id="<%= data.post.id %>">
+  <%- include("../../includes/flash-messages") %>
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Sadržaj - <%= data.post.osnovno.naziv %></h1>
+    <div>
+      <a href="/admin/blog/detalji/<%= data.post.id %>" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Nazad na post
+      </a>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form method="POST" action="/admin/blog/<%= data.post.id %>/sadrzaj" data-form data-post-id="<%= data.post.id %>">
+            <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+            <input type="hidden" name="_method" value="PUT">
+            
+            <div class="mb-3">
+              <label class="form-label">Blokovi sadržaja</label>
+              <div data-content-blocks>
+                <% if (data.post.sadrzaj?.blokovi && data.post.sadrzaj.blokovi.length > 0) { %>
+                  <% data.post.sadrzaj.blokovi.forEach(function(block, index) { %>
+                    <div class="card mb-3" data-content-block="<%= index %>">
+                      <div class="card-body">
+                        <div class="row g-2">
+                          <!-- Tip bloka -->
+                          <div class="col-md-12">
+                            <select name="content[<%= index %>][type]" class="form-select form-select-sm" data-block-type="<%= index %>">
+                              <option value="heading" <%= block.type === 'heading' ? 'selected' : '' %>>Naslov</option>
+                              <option value="paragraph" <%= block.type === 'paragraph' ? 'selected' : '' %>>Paragraf</option>
+                              <option value="list" <%= block.type === 'list' ? 'selected' : '' %>>Lista</option>
+                              <option value="table" <%= block.type === 'table' ? 'selected' : '' %>>Tabela</option>
+                              <option value="image" <%= block.type === 'image' ? 'selected' : '' %>>Slika</option>
+                              <option value="quote" <%= block.type === 'quote' ? 'selected' : '' %>>Citat</option>
+                            </select>
+                          </div>
+                          
+                          <!-- Glavni tekst (za sve tipove) -->
+                          <div class="col-md-12">
+                            <textarea name="content[<%= index %>][text]" class="form-control form-control-sm" rows="3"
+                                      placeholder="Tekst"><%= block.text || '' %></textarea>
+                          </div>
+                          
+                          <!-- Polja specifična za tip -->
+                          <div class="col-md-12">
+                            <!-- heading: nivo -->
+                            <div class="row g-1 js-field-group d-none" data-block-fields="heading">
+                              <div class="col-md-6">
+                                <label class="small text-muted">Nivo headinga</label>
+                                <input type="number" name="content[<%= index %>][level]" class="form-control form-control-sm" 
+                                       value="<%= block.level || 2 %>" min="1" max="6" step="1">
+                              </div>
+                            </div>
+                            
+                            <!-- list: items (kao JSON ili više redova) -->
+                            <div class="row g-1 js-field-group d-none" data-block-fields="list">
+                              <div class="col-md-12">
+                                <label class="small text-muted">Stavke liste (jedna po redu)</label>
+                                <textarea name="content[<%= index %>][items]" class="form-control form-control-sm" rows="3"
+                                          placeholder="Stavka 1&#10;Stavka 2&#10;Stavka 3"><%= (block.items || []).join('\n') %></textarea>
+                                <small class="text-muted">Svaka stavka u novom redu</small>
+                              </div>
+                            </div>
+                            
+                            <!-- table: rows (kao CSV ili JSON) – pojednostavljeno: string sa redovima odvojenim novim redom, kolone tabom -->
+                            <div class="row g-1 js-field-group d-none" data-block-fields="table">
+                              <div class="col-md-12">
+                                <label class="small text-muted">Tabela (redovi, kolone odvojene TAB-om)</label>
+                                <textarea name="content[<%= index %>][rows]" class="form-control form-control-sm" rows="4"
+                                          placeholder="Kolona1\tKolona2\tKolona3&#10;Red1\tVrednost1\tVrednost2"><%= (block.rows || []).map(row => row.join('\t')).join('\n') %></textarea>
+                                <small class="text-muted">Prvi red su zaglavlja (opciono), svaki novi red je novi red tabele</small>
+                              </div>
+                            </div>
+                            
+                            <!-- image: src i alt -->
+                            <div class="row g-1 js-field-group d-none" data-block-fields="image">
+                              <div class="col-md-8">
+                                <label class="small text-muted">URL slike</label>
+                                <input type="text" name="content[<%= index %>][src]" class="form-control form-control-sm" 
+                                       value="<%= block.src || '' %>" placeholder="https://...">
+                              </div>
+                              <div class="col-md-4">
+                                <label class="small text-muted">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-outline-primary w-100" data-upload-image="<%= index %>">
+                                  <i class="bi bi-upload"></i> Upload
+                                </button>
+                              </div>
+                              <div class="col-md-12">
+                                <label class="small text-muted">Alt tekst</label>
+                                <input type="text" name="content[<%= index %>][alt]" class="form-control form-control-sm" 
+                                       value="<%= block.alt || '' %>" placeholder="Opis slike">
+                              </div>
+                            </div>
+                            
+                            <!-- quote: nema dodatnih polja -->
+                          </div>
+                          
+                          <!-- Dugme za uklanjanje bloka -->
+                          <div class="col-md-12 text-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-content-remove="<%= index %>">
+                              <i class="bi bi-trash"></i> Obriši blok
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  <% }) %>
+                <% } %>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-content-add>
+                <i class="bi bi-plus"></i> Dodaj blok
+              </button>
+            </div>
+            
+            <div class="d-flex gap-2 pt-3 border-top">
+              <button type="submit" class="btn btn-primary" data-submit-btn>
+                <i class="bi bi-check-lg"></i> <span data-submit-label>Sačuvaj sadržaj</span>
+                <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+              </button>
+              <a href="/admin/blog/detalji/<%= data.post.id %>" class="btn btn-outline-secondary">Odustani</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="card-title mb-0">Pregled</h6>
+        </div>
+        <div class="card-body">
+          <div data-content-preview>
+            <%- data.post.sadrzaj?.html || '<p class="text-muted">Nema sadržaja</p>' %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mb-0">Informacije</h6>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-sm-5 text-muted">Vreme čitanja</dt>
+            <dd class="col-sm-7"><%= data.post.sadrzaj?.vremeCitanja || 0 %> min</dd>
+            <dt class="col-sm-5 text-muted">Broj blokova</dt>
+            <dd class="col-sm-7"><%= data.post.sadrzaj?.blokovi?.length || 0 %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/js/post-content.js"></script>
+
+<%- include("../../includes/footer") %>

@@ -1,0 +1,12 @@
+<%
+subject = `Nema na stanju: ${item.title || item.naziv || 'artikal'} - ${SITE_NAME}`;
+body = `
+  <p>Poštovani,</p>
+  <p>Artikal <strong>${item.title || item.naziv}</strong> je rasprodat.</p>
+  <p style="text-align:center; margin:25px 0;">
+    <a href="${adminUrl}" style="display:inline-block; background-color:#f44336; color:#ffffff; padding:12px 30px; text-decoration:none; border-radius:4px;">Pogledaj artikal</a>
+  </p>
+  <p style="color:#999; font-size:14px;">Ovo je automatska poruka za administratore.</p>
+`;
+%>
+<%- include("_layout") %>

@@ -1,0 +1,16 @@
+<div class="post-content">
+  <% if (data.html) { %>
+    <%- data.html %>
+  <% } else { %>
+    <p class="text-muted">Nema sadržaja</p>
+  <% } %>
+  
+  <div class="mt-3 text-muted small">
+    <% if (data.blocks && data.blocks.length > 0) { %>
+      <span>Broj blokova: <%= data.blocks.length %></span>
+    <% } %>
+    <% if (data.readTime) { %>
+      <span class="ms-3">Vreme čitanja: <%= data.readTime %> min</span>
+    <% } %>
+  </div>
+</div>

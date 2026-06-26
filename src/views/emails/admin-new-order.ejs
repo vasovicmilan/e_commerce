@@ -1,0 +1,15 @@
+<%
+subject = `Nova porudžbina #${(order.id || '').slice(-6)} - ${SITE_NAME}`;
+body = `
+  <p>Poštovani,</p>
+  <p>Primljena je nova porudžbina <strong>#${(order.id || '').slice(-6)}</strong>.</p>
+  <p><strong>Kupac:</strong> ${order.buyer?.firstName || ''} ${order.buyer?.lastName || ''}</p>
+  <p><strong>Email:</strong> ${order.buyer?.email || ''}</p>
+  <p><strong>Ukupno:</strong> ${order.totalPrice || 0} RSD</p>
+  <p style="text-align:center; margin:25px 0;">
+    <a href="${adminUrl}" style="display:inline-block; background-color:#4caf50; color:#ffffff; padding:12px 30px; text-decoration:none; border-radius:4px;">Pogledaj detalje</a>
+  </p>
+  <p style="color:#999; font-size:14px;">Ovo je automatska poruka za administratore.</p>
+`;
+%>
+<%- include("_layout") %>

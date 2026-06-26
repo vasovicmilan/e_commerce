@@ -1,0 +1,38 @@
+  <footer class="bg-dark text-light py-5 mt-auto">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <h5 class="mb-3"><%= SITE_NAME || 'TopHelanke' %></h5>
+          <p class="text-secondary small">Online prodavnica ženske garderobe. Kvalitetne helanke, fitness komplete, farmerice i pantalone.</p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="mb-3">Informacije</h6>
+          <ul class="list-unstyled small">
+            <li class="mb-1"><a href="/o-nama" class="text-secondary text-decoration-none">O nama</a></li>
+            <li class="mb-1"><a href="/kontakt" class="text-secondary text-decoration-none">Kontakt</a></li>
+            <li class="mb-1"><a href="/faq" class="text-secondary text-decoration-none">FAQ</a></li>
+            <li class="mb-1"><a href="/uslovi-koriscenja" class="text-secondary text-decoration-none">Uslovi korišćenja</a></li>
+            <li class="mb-1"><a href="/politika-privatnosti" class="text-secondary text-decoration-none">Politika privatnosti</a></li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <h6 class="mb-3">Pratite nas</h6>
+          <div class="d-flex gap-3">
+            <a href="#" class="text-secondary fs-5" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="text-secondary fs-5" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="text-secondary fs-5" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+          </div>
+        </div>
+      </div>
+      <hr class="my-4 border-secondary">
+      <p class="text-center text-secondary small mb-0">&copy; <%= CURRENT_YEAR || new Date().getFullYear() %> <%= SITE_NAME || 'TopHelanke' %>. Sva prava zadržana.</p>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS -->
+   <script src="/js/app.js" defer></script>
+  <script src="/js/navigation.js" defer></script>
+</body>
+</html>

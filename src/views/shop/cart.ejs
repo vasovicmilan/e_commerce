@@ -1,0 +1,91 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container py-4">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+  
+  <h1 class="h3 mb-4">Korpa</h1>
+  
+  <% if (data.empty) { %>
+    <div class="text-center py-5">
+      <i class="bi bi-cart fs-1 d-block mb-3 text-muted"></i>
+      <p class="text-muted">Korpa je prazna</p>
+      <a href="/prodavnica" class="btn btn-primary">Idi u prodavnicu</a>
+    </div>
+  <% } else { %>
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-body p-0">
+            <% data.items.forEach(function(item, index) { %>
+              <div class="d-flex align-items-center p-3<%= index < data.items.length - 1 ? ' border-bottom' : '' %>" data-cart-item>
+                <img src="<%= item.image && item.image.img ? `/images/items/${item.image.img}` : '/images/placeholder.webp' %>" 
+                     alt="<%= item.title %>" class="rounded me-3" width="80" height="80" loading="lazy">
+                <div class="flex-grow-1">
+                  <p class="fw-semibold mb-1"><%= item.title %></p>
+                  <p class="small text-muted mb-1"><%= item.size %> / <%= item.color %></p>
+                  <div class="d-flex align-items-center gap-2">
+                    <!-- 🔥 Dugme za smanjenje za 1 -->
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            data-decrease-quantity 
+                            data-item-id="<%= item.itemId %>" 
+                            data-variation-id="<%= item.variationId %>">
+                      <i class="bi bi-dash"></i>
+                    </button>
+                    <span class="fw-bold" style="min-width: 30px; text-align: center;"><%= item.quantity %></span>
+                    <!-- 🔥 Dugme za povećanje za 1 -->
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            data-increase-quantity 
+                            data-item-id="<%= item.itemId %>" 
+                            data-variation-id="<%= item.variationId %>">
+                      <i class="bi bi-plus"></i>
+                    </button>
+                    <span class="ms-2 text-muted"><%= item.price %> RSD</span>
+                  </div>
+                </div>
+                <div class="text-end ms-3">
+                  <p class="fw-bold mb-2"><%= Number(item.price) * Number(item.quantity) %> RSD</p>
+                  <!-- 🔥 Dugme za potpuno brisanje (briše sve komade) -->
+                  <button type="button" class="btn btn-sm btn-outline-danger" 
+                          data-remove-from-cart 
+                          data-item-id="<%= item.itemId %>" 
+                          data-variation-id="<%= item.variationId %>"
+                          data-quantity="<%= item.quantity %>">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-body">
+            <dl class="row mb-2">
+              <dt class="col-6">Subtotal</dt>
+              <dd class="col-6 text-end"><%= data.subtotal %> RSD</dd>
+            </dl>
+            <hr>
+            <dl class="row mb-3">
+              <dt class="col-6 fw-bold">Ukupno</dt>
+              <dd class="col-6 text-end fw-bold"><%= data.subtotal %> RSD</dd>
+            </dl>
+            <a href="/prodavnica/checkout" class="btn btn-primary w-100">Nastavi na checkout</a>
+            <a href="/prodavnica" class="btn btn-outline-secondary w-100 mt-2">Nastavi kupovinu</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</main>
+
+<!-- 🔥 META TAGOVI ZA CSRF I API TOKEN -->
+<meta name="csrf-token" content="<%= csrfToken %>">
+<meta name="api-token" content="<%= user?.token || '' %>">
+
+<script src="/js/cart.js"></script>
+
+<%- include("../includes/footer") %>

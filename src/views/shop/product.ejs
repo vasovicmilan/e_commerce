@@ -1,0 +1,215 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container py-4">
+  <%- include("../includes/breadcrumbs", { breadcrumbs: data.breadcrumbs }) %>
+  <%- include("../includes/flash-messages") %>
+  
+  <div class="row g-4">
+    <!-- Galerija -->
+    <div class="col-md-6">
+      <div class="product-gallery">
+        <img src="<%= data.gallery.main || '/images/placeholder.jpg' %>" 
+             alt="<%= data.item.naziv %>" 
+             class="img-fluid rounded main-product-image" 
+             id="mainImage"
+             data-zoom-image="<%= data.gallery.main %>">
+      </div>
+      
+      <!-- Thumbnail galerija -->
+      <% if (data.gallery.images && data.gallery.images.length > 0) { %>
+        <div class="row g-2 mt-3" id="thumbnailGallery">
+          <div class="col-3">
+            <button type="button" class="btn p-0 border-0 w-100 thumb-btn" data-thumb="<%= data.gallery.main %>" aria-label="Glavna slika">
+              <img src="<%= data.gallery.main %>" alt="Glavna" class="img-thumbnail w-100">
+            </button>
+          </div>
+          <% data.gallery.images.forEach(function(img, index) { %>
+            <div class="col-3">
+              <button type="button" class="btn p-0 border-0 w-100 thumb-btn" data-thumb="<%= img %>" aria-label="Slika <%= index + 1 %>">
+                <img src="<%= img %>" alt="<%= data.item.naziv %>" class="img-thumbnail w-100">
+              </button>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+    
+    <!-- Detalji -->
+    <div class="col-md-6">
+      <h1 class="h3"><%= data.item.naziv %></h1>
+      <p class="small text-muted">SKU: <%= data.item.sku %></p>
+      
+      <!-- Ocena -->
+      <% if (data.item.rating && data.item.rating.prosek > 0) { %>
+        <div class="mb-3" aria-label="Ocena: <%= data.item.rating.prosek %> od 5">
+          <% for (let i = 1; i <= 5; i++) { %>
+            <i class="bi bi-star<%= i <= Math.round(data.item.rating.prosek) ? '-fill' : '' %> <%= i <= Math.round(data.item.rating.prosek) ? 'text-warning' : 'text-muted' %>"></i>
+          <% } %>
+          <span class="ms-1">(<%= data.item.rating.brojOcena %>)</span>
+        </div>
+      <% } %>
+      
+      <!-- Cena -->
+      <div class="mb-3">
+        <% if (data.item.naAkciji && data.item.originalnaCena) { %>
+          <span class="h3 text-danger" id="displayPrice"><%= data.item.cena %> RSD</span>
+          <span class="text-muted text-decoration-line-through ms-2 h5"><%= data.item.originalnaCena %> RSD</span>
+          <span class="badge bg-danger ms-2">Akcija</span>
+        <% } else { %>
+          <span class="h3" id="displayPrice"><%= data.item.cena %> RSD</span>
+        <% } %>
+      </div>
+      
+      <!-- Kratak opis -->
+      <p class="text-muted"><%= data.item.kratakOpis %></p>
+      
+      <!-- Kategorije i Tagovi -->
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <% if (data.item.kategorije && data.item.kategorije.length > 0) { %>
+          <% data.item.kategorije.forEach(function(cat) { %>
+            <a href="/prodavnica/kategorija/<%= cat.slug %>" class="badge bg-primary text-decoration-none"><%= cat.naziv %></a>
+          <% }) %>
+        <% } %>
+        <% if (data.item.tagovi && data.item.tagovi.length > 0) { %>
+          <% data.item.tagovi.forEach(function(tag) { %>
+            <a href="/prodavnica/tag/<%= tag.slug %>/<%= tag.tip %>" class="badge bg-secondary text-decoration-none"><%= tag.naziv %></a>
+          <% }) %>
+        <% } %>
+      </div>
+      
+      <!-- Varijacije -->
+      <% if (data.item.varijacije && data.item.varijacije.length > 0) { %>
+        <div class="mb-3 variation-section">
+          <label class="form-label fw-semibold">Veličina</label>
+          <div class="d-flex flex-wrap gap-2" id="variationSizeGroup">
+            <% var uniqueSizes = []; %>
+            <% data.item.varijacije.forEach(function(v) { %>
+              <% if (!uniqueSizes.includes(v.velicina)) { uniqueSizes.push(v.velicina); } %>
+            <% }) %>
+            <% uniqueSizes.forEach(function(size) { %>
+              <input type="radio" class="btn-check" name="size" id="size_<%= size %>" value="<%= size %>" autocomplete="off">
+              <label class="btn btn-outline-primary variation-btn" for="size_<%= size %>"><%= size %></label>
+            <% }) %>
+          </div>
+        </div>
+        
+        <div class="mb-3 variation-section">
+          <label class="form-label fw-semibold">Boja</label>
+          <div class="d-flex flex-wrap gap-2" id="variationColorGroup">
+            <% var uniqueColors = []; %>
+            <% data.item.varijacije.forEach(function(v) { %>
+              <% if (!uniqueColors.includes(v.boja)) { uniqueColors.push(v.boja); } %>
+            <% }) %>
+            <% uniqueColors.forEach(function(color) { %>
+              <input type="radio" class="btn-check" name="color" id="color_<%= color %>" value="<%= color %>" autocomplete="off">
+              <label class="btn btn-outline-primary variation-btn" for="color_<%= color %>"><%= color %></label>
+            <% }) %>
+          </div>
+        </div>
+        
+        <!-- Mere -->
+        <div id="measurementsDisplay" class="mb-3 d-none variation-section">
+          <hr>
+          <h6 class="fw-semibold">Mere</h6>
+          <div id="measurementsContent" class="small"></div>
+        </div>
+        
+        <div class="mb-3 variation-section">
+          <label for="quantity" class="form-label fw-semibold">Količina</label>
+          <div class="input-group" style="max-width: 150px;">
+            <button type="button" class="btn btn-outline-secondary" data-qty-minus aria-label="Smanji količinu">-</button>
+            <input type="number" id="quantity" class="form-control text-center" value="1" min="1" max="10" data-qty-input>
+            <button type="button" class="btn btn-outline-secondary" data-qty-plus aria-label="Povećaj količinu">+</button>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- Add to Cart -->
+      <div class="d-flex gap-2 mb-4">
+        <button type="button" class="btn btn-primary btn-lg flex-grow-1" 
+                data-add-to-cart 
+                data-item-id="<%= data.item.id %>" 
+                data-item-slug="<%= data.item.slug %>">
+          <i class="bi bi-cart-plus"></i> Dodaj u korpu
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-lg" 
+                data-toggle-wishlist 
+                data-item-id="<%= data.item.id %>"
+                aria-label="Dodaj u listu želja">
+          <i class="bi bi-heart"></i>
+        </button>
+      </div>
+      
+      <!-- Opis -->
+      <% if (data.item.opis) { %>
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2 class="h6 card-title mb-0">Opis</h2>
+          </div>
+          <div class="card-body">
+            <p><%= data.item.opis %></p>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- FAQ -->
+      <% if (data.item.faq && data.item.faq.length > 0) { %>
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2 class="h6 card-title mb-0">Česta pitanja</h2>
+          </div>
+          <div class="card-body">
+            <%- include("../includes/components/faq", { faq: data.item.faq }) %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+  
+  <!-- Up-Sell i Cross-Sell -->
+  <% if (data.upSellItems && data.upSellItems.length > 0) { %>
+    <section class="mt-5">
+      <h2 class="h4 mb-3">Slični proizvodi</h2>
+      <div class="row g-3">
+        <% data.upSellItems.forEach(function(item) { %>
+          <div class="col-6 col-md-3">
+            <%- include("../includes/components/card-item", { item: item }) %>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+  
+  <% if (data.crossSellItems && data.crossSellItems.length > 0) { %>
+    <section class="mt-5">
+      <h2 class="h4 mb-3">Kupci su takođe kupili</h2>
+      <div class="row g-3">
+        <% data.crossSellItems.forEach(function(item) { %>
+          <div class="col-6 col-md-3">
+            <%- include("../includes/components/card-item", { item: item }) %>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+</main>
+
+<!-- Overlay -->
+<div class="product-overlay d-none" id="imageOverlay">
+  <button type="button" class="btn-close btn-close-white" id="closeOverlay" aria-label="Zatvori"></button>
+  <img src="" alt="Uvećana slika" id="overlayImage">
+</div>
+
+<!-- Tokeni -->
+<meta name="csrf-token" content="<%= csrfToken %>">
+<meta name="api-token" content="<%= user?.token || '' %>">
+
+<!-- Podaci o varijacijama -->
+<script id="variationsData" type="application/json">
+  <%- JSON.stringify(data.variationsForJs) %>
+</script>
+
+<!-- Glavna skripta -->
+<script src="/js/product.js"></script>
+<%- include("../includes/footer") %>

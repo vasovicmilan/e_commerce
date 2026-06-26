@@ -1,0 +1,24 @@
+<div class="d-grid gap-2">
+  <% if (!data.isApproved) { %>
+    <form method="POST" action="/admin/testimonials/<%= data.testimonialId %>/odobri" data-form>
+      <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+      <input type="hidden" name="_method" value="PUT">
+      <input type="hidden" name="approvedBy" value="<%= user ? user.id : '' %>">
+      <button type="submit" class="btn btn-sm btn-success w-100" data-submit-btn>
+        <i class="bi bi-check-lg"></i> <span data-submit-label>Odobri</span>
+        <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+      </button>
+    </form>
+  <% } %>
+  
+  <form method="POST" action="/admin/testimonials/<%= data.testimonialId %>/istakni" data-form>
+    <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+    <input type="hidden" name="_method" value="PUT">
+    <input type="hidden" name="isFeatured" value="<%= data.isFeatured ? 'false' : 'true' %>">
+    <button type="submit" class="btn btn-sm <%= data.isFeatured ? 'btn-outline-warning' : 'btn-outline-secondary' %> w-100" data-submit-btn>
+      <i class="bi bi-star<%= data.isFeatured ? '-fill' : '' %>"></i>
+      <span data-submit-label><%= data.isFeatured ? 'Ukloni iz istaknutih' : 'Istakni' %></span>
+      <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+    </button>
+  </form>
+</div>

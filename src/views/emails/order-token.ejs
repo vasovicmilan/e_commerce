@@ -1,0 +1,15 @@
+<%
+subject = `Potvrdite vašu porudžbinu - ${SITE_NAME}`;
+body = `
+  <p>Zdravo ${firstName},</p>
+  <p>Kreirali ste porudžbinu na ${SITE_NAME}. Da biste je potvrdili, kliknite na dugme ispod:</p>
+  <p style="text-align: center; margin: 25px 0;">
+    <a href="${confirmUrl}" style="display: inline-block; background-color: #4caf50; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: bold;">Potvrdi porudžbinu</a>
+  </p>
+  <p>Ili kopirajte ovaj link:</p>
+  <p style="word-break: break-all; color: #666; font-size: 14px;">${confirmUrl}</p>
+  <p style="margin-top: 25px; color: #e91e63; font-size: 14px;">Link ističe: ${tokenExpiration ? new Date(tokenExpiration).toLocaleString('sr-RS') : ''}</p>
+  <p style="color: #999; font-size: 14px;">Ako ne potvrdite porudžbinu, biće automatski otkazana nakon isteka linka.</p>
+`;
+%>
+<%- include("_layout") %>

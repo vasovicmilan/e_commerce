@@ -1,0 +1,213 @@
+<%- include("../includes/head") %>
+  <%- include("../includes/navigation") %>
+
+    <main>
+      <%- include("../includes/flash-messages") %>
+
+        <!-- Hero + Search (full width) -->
+        <section class="bg-primary text-white py-4">
+          <div class="container">
+            <div class="row align-items-center">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <h1 class="h2 mb-2">Prodavnica</h1>
+              </div>
+              <div class="col-md-6">
+                <form action="/prodavnica/pretraga" method="GET" role="search">
+                  <div class="input-group">
+                    <label for="shopSearch" class="visually-hidden">Pretraži proizvode</label>
+                    <input type="search" id="shopSearch" name="q" class="form-control"
+                      placeholder="Pretraži proizvode...">
+                    <button type="submit" class="btn btn-light" aria-label="Pretraži">
+                      <i class="bi bi-search"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Glavni sadržaj: levo + desno -->
+        <div class="container py-4">
+          <div class="row g-4">
+            <% const breadcrumbs=[ { label: 'Početna' , url: '/' }, { label: 'Prodavnica' , url: null } ]; %>
+              <%- include("../includes/breadcrumbs", { breadcrumbs: breadcrumbs }) %>
+                <!-- LEVA STRANA (glavni sadržaj) -->
+                <div class="col-lg-8">
+                  <!-- Istaknuti -->
+                  <% if (data.featured && data.featured.length> 0) { %>
+                    <section class="mb-5">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h4 mb-0">Istaknuti proizvodi</h2>
+                        <a href="/prodavnica/istaknuto" class="btn btn-outline-primary btn-sm">
+                          Pogledaj sve <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                      </div>
+                      <div class="row g-3">
+                        <% data.featured.forEach(function(item) { %>
+                          <div class="col-6 col-md-4 col-xl-3">
+                            <%- include("../includes/components/card-item", { item: item }) %>
+                          </div>
+                          <% }) %>
+                      </div>
+                    </section>
+                    <% } %>
+
+                      <!-- Akcija -->
+                      <% if (data.actioned && data.actioned.length> 0) { %>
+                        <section class="mb-5 bg-danger bg-opacity-10 p-3 rounded">
+                          <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                              <h2 class="h4 mb-0">Na akciji</h2>
+                              <p class="small text-muted mb-0">Snižene cene – ograničeno vreme</p>
+                            </div>
+                            <a href="/prodavnica/akcija" class="btn btn-outline-danger btn-sm">
+                              Pogledaj sve <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                          </div>
+                          <div class="row g-3">
+                            <% data.actioned.forEach(function(item) { %>
+                              <div class="col-6 col-md-4 col-xl-3">
+                                <%- include("../includes/components/card-item", { item: item }) %>
+                              </div>
+                              <% }) %>
+                          </div>
+                        </section>
+                        <% } %>
+
+                          <!-- Kategorije sa pregledom proizvoda -->
+                          <% if (data.categoryPreviews && data.categoryPreviews.length> 0) { %>
+                            <% data.categoryPreviews.forEach(function(preview) { %>
+                              <% if (preview.items && preview.items.length> 0) { %>
+                                <section class="mb-5">
+                                  <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h2 class="h4 mb-0">
+                                      <%= preview.category.name %>
+                                    </h2>
+                                    <a href="/prodavnica/kategorija/<%= preview.category.slug %>"
+                                      class="btn btn-outline-primary btn-sm">
+                                      Svi <%= preview.category.name.toLowerCase() %> <i
+                                          class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+                                  </div>
+                                  <div class="row g-3">
+                                    <% preview.items.forEach(function(item) { %>
+                                      <div class="col-6 col-md-4 col-xl-3">
+                                        <%- include("../includes/components/card-item", { item: item }) %>
+                                      </div>
+                                      <% }) %>
+                                  </div>
+                                </section>
+                                <% } %>
+                                  <% }) %>
+                                    <% } %>
+                </div>
+
+                <!-- DESNA STRANA (sidebar) -->
+                <aside class="col-lg-4">
+                  <!-- Kategorije -->
+                  <% if (data.categories && data.categories.length> 0) { %>
+                    <div class="card mb-4">
+                      <div class="card-header">
+                        <h5 class="card-title mb-0">Kategorije</h5>
+                      </div>
+                      <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                          <li class="list-group-item">
+                            <a href="/prodavnica" class="text-decoration-none">Sve</a>
+                          </li>
+                          <% data.categories.forEach(function(cat) { %>
+                            <li class="list-group-item">
+                              <a href="/prodavnica/kategorija/<%= cat.slug %>" class="text-decoration-none">
+                                <%= cat.naziv %>
+                              </a>
+                            </li>
+                            <% }) %>
+                        </ul>
+                      </div>
+                    </div>
+                    <% } %>
+
+                      <!-- Filteri / Tagovi -->
+                      <% if (data.tags && Object.keys(data.tags).length> 0) { %>
+                        <div class="card">
+                          <div class="card-header">
+                            <h5 class="card-title mb-0">Filteri</h5>
+                          </div>
+                          <div class="card-body">
+                            <% Object.entries(data.tags).forEach(function(entry) { %>
+                              <% if (entry[1] && entry[1].length> 0) { %>
+                                <div class="mb-3">
+                                  <span class="fw-semibold small text-uppercase text-muted">
+                                    <%= entry[0] %>:
+                                  </span>
+                                  <div class="d-flex flex-wrap gap-1 mt-1">
+                                    <% entry[1].forEach(function(tag) { %>
+                                      <a href="/prodavnica/tag/<%= tag.slug %>/<%= tag.tip || tag.type %>"
+                                        class="badge bg-light text-dark text-decoration-none px-2 py-1 border">
+                                        <%= tag.naziv %>
+                                      </a>
+                                      <% }) %>
+                                  </div>
+                                </div>
+                                <% } %>
+                                  <% }) %>
+                          </div>
+                        </div>
+                        <% } %>
+                </aside>
+          </div>
+
+          <!-- Blog postovi (preko cele širine) -->
+          <% if (data.posts && data.posts.length> 0) { %>
+            <section class="mt-5 pt-3 border-top">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h4 mb-0">Najnovije sa bloga</h2>
+                <a href="/blog" class="btn btn-outline-primary btn-sm">
+                  Ceo blog <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+              <div class="row g-3">
+                <% data.posts.forEach(function(post) { %>
+                  <div class="col-md-4">
+                    <%- include("../includes/components/card-post", { post: post }) %>
+                  </div>
+                  <% }) %>
+              </div>
+            </section>
+            <% } %>
+
+              <!-- FAQ (ako postoji) -->
+              <% if (data.faq && data.faq.length> 0) { %>
+                <section class="mt-5 pt-3 border-top">
+                  <h2 class="h4 mb-3">Česta pitanja</h2>
+                  <div class="accordion" id="faqAccordion">
+                    <% data.faq.forEach(function(item, index) { %>
+                      <div class="accordion-item">
+                        <h3 class="accordion-header" id="faqHeading<%= index %>">
+                          <button class="accordion-button <%= index === 0 ? '' : 'collapsed' %>" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse<%= index %>"
+                            aria-expanded="<%= index === 0 ? 'true' : 'false' %>"
+                            aria-controls="faqCollapse<%= index %>">
+                            <% if (item.ikona) { %>
+                              <i class="bi <%= item.ikona %> me-2"></i>
+                              <% } %>
+                                <%= item.pitanje %>
+                          </button>
+                        </h3>
+                        <div id="faqCollapse<%= index %>"
+                          class="accordion-collapse collapse <%= index === 0 ? 'show' : '' %>"
+                          aria-labelledby="faqHeading<%= index %>" data-bs-parent="#faqAccordion">
+                          <div class="accordion-body">
+                            <%= item.odgovor %>
+                          </div>
+                        </div>
+                      </div>
+                      <% }) %>
+                  </div>
+                </section>
+                <% } %>
+        </div>
+    </main>
+
+    <%- include("../includes/footer") %>

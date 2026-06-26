@@ -1,0 +1,75 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container py-5">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+  
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 class="mb-4"><%= pageTitle %></h1>
+      
+      <!-- Statički sadržaj (uvod, politika, uslovi, partnerstvo, FAQ uvod) -->
+      <div class="content">
+        <%- content %>
+      </div>
+      
+      <!-- Kontakt forma – prikazuje se samo kada je showForm = true -->
+      <% if (showForm) { %>
+        <div class="card mt-4">
+          <div class="card-body">
+            <% if (data.success) { %>
+              <div class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i> Poruka je uspešno poslata!
+              </div>
+            <% } else { %>
+              <form method="POST" action="/kontakt" novalidate data-form>
+                <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+                <div class="d-none" aria-hidden="true">
+                  <input type="text" name="nickname" tabindex="-1" autocomplete="off">
+                </div>
+                
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="firstName" class="form-label">Ime *</label>
+                    <input type="text" id="firstName" name="firstName" class="form-control" required
+                           value="<%= typeof data.formData !== 'undefined' ? data.formData.firstName || '' : '' %>">
+                  </div>
+                  <div class="col-md-6">
+                    <label for="email" class="form-label">Email *</label>
+                    <input type="email" id="email" name="email" class="form-control" required
+                           value="<%= typeof data.formData !== 'undefined' ? data.formData.email || '' : '' %>">
+                  </div>
+                  <div class="col-12">
+                    <label for="title" class="form-label">Naslov *</label>
+                    <input type="text" id="title" name="title" class="form-control" required
+                           value="<%= typeof data.formData !== 'undefined' ? data.formData.title || '' : '' %>">
+                  </div>
+                  <div class="col-12">
+                    <label for="message" class="form-label">Poruka *</label>
+                    <textarea id="message" name="message" class="form-control" rows="5" required><%= typeof data.formData !== 'undefined' ? data.formData.message || '' : '' %></textarea>
+                  </div>
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-primary" data-submit-btn>
+                      <i class="bi bi-send"></i> <span data-submit-label>Pošalji poruku</span>
+                      <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- FAQ sekcija – prikazuje se kada je showFaq = true -->
+      <% if (showFaq) { %>
+        <div class="mt-4">
+          <%- include("../includes/components/faq", { faq: [] }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<%- include("../includes/footer") %>

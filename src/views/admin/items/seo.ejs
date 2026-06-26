@@ -1,0 +1,113 @@
+<%- include("../../includes/head") %>
+<%- include("../../includes/navigation") %>
+
+<main class="container-fluid py-4">
+  <%- include("../../includes/flash-messages") %>
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">SEO - <%= data.item.osnovno.naziv %></h1>
+    <div>
+      <a href="/admin/artikli/detalji/<%= data.item.id %>" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Nazad na artikal
+      </a>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form method="POST" action="/admin/artikli/<%= data.item.id %>/seo" data-form>
+            <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+            <input type="hidden" name="_method" value="PUT">
+            
+            <div class="mb-3">
+              <label for="seoDescription" class="form-label">Opis (meta description)</label>
+              <textarea id="seoDescription" name="description" class="form-control" rows="3" 
+                        data-field="description"><%= data.item.seo?.opis || '' %></textarea>
+              <small class="text-muted">Preporučena dužina: 150-160 karaktera</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="seoShortDesc" class="form-label">Kratak opis</label>
+              <textarea id="seoShortDesc" name="shortDescription" class="form-control" rows="2"
+                        data-field="shortDescription"><%= data.item.seo?.kratakOpis || '' %></textarea>
+              <small class="text-muted">Maksimalno 300 karaktera</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="seoKeywords" class="form-label">Ključne reči</label>
+              <input type="text" id="seoKeywords" name="keyWords" class="form-control"
+                     value="<%= (data.item.seo?.kljucneReci || []).join(', ') %>"
+                     placeholder="reč1, reč2, reč3" data-field="keyWords">
+              <small class="text-muted">Odvojite zarezom</small>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">FAQ</label>
+              <div data-faq-container>
+                <% if (data.item.seo?.faq && data.item.seo.faq.length > 0) { %>
+                  <% data.item.seo.faq.forEach(function(faq, index) { %>
+                    <div class="row g-2 mb-2" data-faq-item="<%= index %>">
+                      <div class="col-md-4">
+                        <input type="text" name="faq[<%= index %>][question]" class="form-control form-control-sm" 
+                              value="<%= faq.pitanje %>" placeholder="Pitanje">
+                      </div>
+                      <div class="col-md-4">
+                        <input type="text" name="faq[<%= index %>][answer]" class="form-control form-control-sm" 
+                              value="<%= faq.odgovor %>" placeholder="Odgovor">
+                      </div>
+                      <div class="col-md-3">
+                        <select name="faq[<%= index %>][icon]" class="form-select form-select-sm" value="<%= faq.ikona || '' %>">
+                          <option value="">Bez ikonice</option>
+                          <!-- JS će dodati ostale opcije -->
+                        </select>
+                        <span class="faq-icon-preview ms-2"></span>
+                      </div>
+                      <div class="col-md-1">
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-faq-remove>
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  <% }) %>
+                <% } %>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-faq-add>
+                <i class="bi bi-plus"></i> Dodaj FAQ
+              </button>
+            </div>
+            
+            <div class="d-flex gap-2 pt-3 border-top">
+              <button type="submit" class="btn btn-primary" data-submit-btn>
+                <i class="bi bi-check-lg"></i> <span data-submit-label>Sačuvaj SEO</span>
+                <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+              </button>
+              <a href="/admin/artikli/detalji/<%= data.item.id %>" class="btn btn-outline-secondary">Odustani</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="card-title mb-0">SEO informacije</h6>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-sm-5 text-muted">Slug</dt>
+            <dd class="col-sm-7"><%= data.item.osnovno.slug %></dd>
+            <dt class="col-sm-5 text-muted">Status</dt>
+            <dd class="col-sm-7"><%= data.item.osnovno.status %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include("../../includes/footer") %>
+
+<script src="/js/item-seo.js"></script>

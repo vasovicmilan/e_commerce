@@ -1,0 +1,70 @@
+<%
+const subject = `Porudžbina #${(order.id || order.orderNumber || '').slice(-6)} je potvrđena - ${SITE_NAME}`;
+// Pretpostavljamo da je order već mapiran preko mapOrderToPdfModel
+// Dostupni su: order.buyer, order.address, order.items, order.subtotal, order.shipping, order.coupon, order.totalPrice, order.note, cancelUrl
+const orderNumber = (order.id || order.orderNumber || '').slice(-6);
+const items = order.items || [];
+const subtotal = order.subtotal || 0;
+const shipping = order.shipping || 0;
+const discount = order.coupon?.discount || 0;
+const total = order.totalPrice || order.total || 0;
+const hasCoupon = order.coupon && order.coupon.discount > 0;
+%>
+<body>
+  <p>Zdravo <%= order.buyer?.firstName || '' %>,</p>
+  <p>Vaša porudžbina <strong>#<%= orderNumber %></strong> je uspešno potvrđena.</p>
+
+  <h3 style="margin-top:25px;">Detalji porudžbine</h3>
+  <table style="width:100%; border-collapse:collapse; margin:15px 0;">
+    <tr style="background:#f5f5f5;">
+      <th style="padding:10px; text-align:left; border-bottom:1px solid #ddd;">Proizvod</th>
+      <th style="padding:10px; text-align:center; border-bottom:1px solid #ddd;">Boja</th>
+      <th style="padding:10px; text-align:center; border-bottom:1px solid #ddd;">Veličina</th>
+      <th style="padding:10px; text-align:center; border-bottom:1px solid #ddd;">Količina</th>
+      <th style="padding:10px; text-align:right; border-bottom:1px solid #ddd;">Cena</th>
+    </tr>
+    <% items.forEach(item => { %>
+    <tr>
+      <td style="padding:10px; border-bottom:1px solid #eee;"><%= item.title %></td>
+      <td style="padding:10px; text-align:center; border-bottom:1px solid #eee;"><%= item.color || '-' %></td>
+      <td style="padding:10px; text-align:center; border-bottom:1px solid #eee;"><%= item.size || '-' %></td>
+      <td style="padding:10px; text-align:center; border-bottom:1px solid #eee;"><%= item.quantity %></td>
+      <td style="padding:10px; text-align:right; border-bottom:1px solid #eee;"><%= (item.price * item.quantity).toLocaleString('sr-RS') %> RSD</td>
+    </tr>
+    <% }) %>
+  </table>
+
+  <div style="text-align:right; margin-top:10px;">
+    <p style="margin:5px 0;">Međuzbir: <strong><%= subtotal.toLocaleString('sr-RS') %> RSD</strong></p>
+    <% if (shipping > 0) { %>
+    <p style="margin:5px 0;">Dostava: <strong><%= shipping.toLocaleString('sr-RS') %> RSD</strong></p>
+    <% } %>
+    <% if (hasCoupon) { %>
+    <p style="margin:5px 0;">Popust (<%= order.coupon.code %>): <strong>-<%= discount.toLocaleString('sr-RS') %> RSD</strong></p>
+    <% } %>
+    <p style="font-size:20px; font-weight:bold; color:#4caf50; margin-top:10px;">UKUPNO: <%= total.toLocaleString('sr-RS') %> RSD</p>
+  </div>
+
+  <hr style="border:none; border-top:1px solid #eee; margin:25px 0;">
+
+  <h3 style="margin-top:0;">Adresa isporuke</h3>
+  <p style="margin:5px 0;"><%= order.address?.street || '' %></p>
+  <p style="margin:5px 0;"><%= order.address?.postalCode || '' %> <%= order.address?.city || '' %></p>
+  <p style="margin:5px 0;"><%= order.address?.country || 'Srbija' %></p>
+
+  <% if (order.note) { %>
+  <hr style="border:none; border-top:1px solid #eee; margin:25px 0;">
+  <h3 style="margin-top:0;">Napomena</h3>
+  <p style="color:#666;"><%= order.note %></p>
+  <% } %>
+
+  <hr style="border:none; border-top:1px solid #eee; margin:25px 0;">
+
+  <p>Možete otkazati porudžbinu klikom na dugme ispod (važi do isporuke):</p>
+  <p style="text-align:center; margin:25px 0;">
+    <a href="<%= cancelUrl %>" style="display:inline-block; background-color:#f44336; color:#ffffff; padding:12px 30px; text-decoration:none; border-radius:4px;">Otkaži porudžbinu</a>
+  </p>
+  <p style="color:#999; font-size:14px;">Za sva pitanja, kontaktirajte nas na <a href="mailto:<%= SUPPORT_EMAIL %>"><%= SUPPORT_EMAIL %></a></p>
+  <p style="color:#999; font-size:12px;">Ova poruka je automatski generisana. Molimo ne odgovarajte na nju.</p>
+</body>
+<%- include("_layout") %>

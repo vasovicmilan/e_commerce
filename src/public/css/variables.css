@@ -1,0 +1,71 @@
+:root {
+  /* ===== Glavne brand boje (inspirisane tvojim email template-om) ===== */
+  --brand-pink: #e91e63;
+  --brand-pink-light: #fce4ec;
+  --brand-pink-dark: #c2185b;
+  --brand-pink-soft: #f8bbd0;
+  --brand-pink-grad: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-dark));
+  
+  /* ===== Dodatne akcent boje (komplementarne) ===== */
+  --accent-teal: #00bcd4;
+  --accent-teal-dark: #0097a7;
+  --accent-navy: #1e3a8a;
+  --accent-gold: #ffb300;
+  --accent-gold-dark: #f57c00;
+  
+  /* ===== Bootstrap tematske boje (override) ===== */
+  --bs-primary: var(--brand-pink);
+  --bs-primary-rgb: 233, 30, 99;
+  --bs-primary-dark: var(--brand-pink-dark);
+  --bs-primary-light: var(--brand-pink-soft);
+  
+  --bs-secondary: #6c757d;
+  --bs-secondary-rgb: 108, 117, 125;
+  --bs-success: #28a745;
+  --bs-success-rgb: 40, 167, 69;
+  --bs-info: var(--accent-teal);
+  --bs-info-rgb: 0, 188, 212;
+  --bs-warning: var(--accent-gold);
+  --bs-warning-rgb: 255, 179, 0;
+  --bs-danger: #dc3545;
+  --bs-danger-rgb: 220, 53, 69;
+  --bs-light: #f8f9fa;
+  --bs-light-rgb: 248, 249, 250;
+  --bs-dark: #212529;
+  --bs-dark-rgb: 33, 37, 41;
+  
+  /* ===== Pozadine, tekst, borderi ===== */
+  --bs-body-bg: #fffafc;        /* blago roze bela */
+  --bs-body-bg-rgb: 255, 250, 252;
+  --bs-body-color: #2d2f36;
+  --bs-body-color-rgb: 45, 47, 54;
+  --bs-border-color: #f0e1e7;
+  --bs-link-color: var(--brand-pink);
+  --bs-link-hover-color: var(--brand-pink-dark);
+  --bs-link-decoration: none;
+  
+  /* ===== Dugmad (prilagođene primary varijante) ===== */
+  --bs-btn-primary-bg: var(--brand-pink);
+  --bs-btn-primary-border-color: var(--brand-pink);
+  --bs-btn-primary-hover-bg: var(--brand-pink-dark);
+  --bs-btn-primary-hover-border-color: var(--brand-pink-dark);
+  --bs-btn-primary-active-bg: var(--brand-pink-dark);
+  --bs-btn-primary-active-border-color: var(--brand-pink-dark);
+  
+  /* ===== Kartice, forme, senke ===== */
+  --bs-card-border-color: #ffe0e8;
+  --bs-card-cap-bg: var(--brand-pink-light);
+  --bs-input-focus-border-color: var(--brand-pink);
+  --bs-input-focus-box-shadow: 0 0 0 0.25rem rgba(233, 30, 99, 0.25);
+  
+  /* ===== Dodatne UI varijable ===== */
+  --header-bg: #ffffff;
+  --footer-bg: #1e1a1f;
+  --footer-text: #e4e4e4;
+  --badge-bg: var(--brand-pink-light);
+  --badge-color: var(--brand-pink-dark);
+  
+  /* ===== Gradijent i naglasci ===== */
+  --hero-gradient: linear-gradient(120deg, var(--brand-pink-light), #ffe6f0);
+  --hover-shadow: 0 0.5rem 1rem rgba(233, 30, 99, 0.15);
+}

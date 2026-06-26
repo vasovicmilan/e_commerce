@@ -1,0 +1,362 @@
+<%- include('../includes/head') %>
+<%- include('../includes/navigation') %>
+
+<main class="container py-4">
+  <%- include('../includes/breadcrumbs', { breadcrumbs: [
+    { label: 'Početna', url: '/' },
+    { label: 'Korpa', url: '/prodavnica/korpa' },
+    { label: 'Završetak kupovine', url: null }
+  ]}) %>
+
+  <%- include('../includes/flash-messages') %>
+
+  <div class="row g-4">
+    <!-- LEVA STRANA: Forma -->
+    <div class="col-lg-8">
+      <h1 class="h2 mb-4">Završetak kupovine</h1>
+
+      <!-- Globalne greške -->
+      <% if (data.errors && data.errors.general) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <%= data.errors.general %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% } %>
+
+      <form method="POST" action="/prodavnica/checkout" id="checkout-form" class="needs-validation" novalidate>
+        <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+
+        <% if (data.affiliateCode) { %>
+          <input type="hidden" name="partnerCode" value="<%= data.affiliateCode %>">
+        <% } %>
+
+        <!-- ====== PODACI O KUP CU ====== -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title mb-3">
+              <i class="bi bi-person-fill me-2"></i> Podaci o kupcu
+            </h2>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="firstName" class="form-label">Ime <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="firstName" name="buyerInfo[firstName]" 
+                       value="<%= (data.formData && data.formData.buyerInfo ? data.formData.buyerInfo.firstName : (data.customer ? data.customer.osnovno.ime : '')) %>" required>
+                <% if (data.errors && data.errors['buyerInfo.firstName']) { %>
+                  <div class="text-danger small mt-1"><%= data.errors['buyerInfo.firstName'] %></div>
+                <% } %>
+              </div>
+              <div class="col-md-6">
+                <label for="lastName" class="form-label">Prezime <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="lastName" name="buyerInfo[lastName]" 
+                       value="<%= (data.formData && data.formData.buyerInfo ? data.formData.buyerInfo.lastName : (data.customer ? data.customer.osnovno.prezime : '')) %>" required>
+                <% if (data.errors && data.errors['buyerInfo.lastName']) { %>
+                  <div class="text-danger small mt-1"><%= data.errors['buyerInfo.lastName'] %></div>
+                <% } %>
+              </div>
+                <div class="col-12">
+                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" id="email" name="buyerInfo[email]" 
+                        value="<%= data.customer ? data.customer.osnovno.email : (data.formData && data.formData.buyerInfo ? data.formData.buyerInfo.email : '') %>" 
+                        <%= data.customer ? 'readonly' : '' %> required>
+                <% if (data.errors && data.errors['buyerInfo.email']) { %>
+                    <div class="text-danger small mt-1"><%= data.errors['buyerInfo.email'] %></div>
+                <% } %>
+                </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== TELEFON ====== -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title mb-3">
+              <i class="bi bi-telephone-fill me-2"></i> Telefon
+            </h2>
+
+            <% if (data.customer && data.customer.kontakt && data.customer.kontakt.telefoni && data.customer.kontakt.telefoni.length > 0) { %>
+              <div class="mb-3">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="telephoneSelection" value="saved" id="telephoneSaved" checked>
+                  <label class="form-check-label" for="telephoneSaved">Koristi sačuvani broj telefona</label>
+                </div>
+                <div id="saved-telephone-container" class="ms-4 mb-3">
+                  <select name="telephoneId" class="form-select">
+                    <% data.customer.kontakt.telefoni.forEach(function(phone) { %>
+                      <option value="<%= phone.id %>"><%= phone.value %></option>
+                    <% }); %>
+                  </select>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="telephoneSelection" value="new" id="telephoneNew">
+                  <label class="form-check-label" for="telephoneNew">Unesi novi broj telefona</label>
+                </div>
+                <div id="new-telephone-container" class="ms-4 d-none">
+                  <input type="text" class="form-control" name="newTelephone" id="newTelephone" placeholder="061/123-4567">
+                  <div class="form-text">Format: 061/123-4567 ili +381611234567</div>
+                  <% if (data.errors && data.errors.newTelephone) { %>
+                    <div class="text-danger small mt-1"><%= data.errors.newTelephone %></div>
+                  <% } %>
+                </div>
+              </div>
+              <input type="hidden" name="hasNewTelephone" id="hasNewTelephone" value="false">
+            <% } else { %>
+              <div>
+                <label for="newTelephone" class="form-label">Broj telefona <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="newTelephone" name="newTelephone" placeholder="061/123-4567" required>
+                <div class="form-text">Format: 061/123-4567 ili +381611234567</div>
+                <% if (data.errors && data.errors.newTelephone) { %>
+                  <div class="text-danger small mt-1"><%= data.errors.newTelephone %></div>
+                <% } %>
+              </div>
+              <input type="hidden" name="hasNewTelephone" value="true">
+            <% } %>
+          </div>
+        </div>
+
+        <!-- ====== ADRESA ====== -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title mb-3">
+              <i class="bi bi-geo-alt-fill me-2"></i> Adresa za dostavu
+            </h2>
+
+            <% if (data.customer && data.customer.kontakt && data.customer.kontakt.adrese && data.customer.kontakt.adrese.length > 0) { %>
+              <div class="mb-3">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="addressSelection" value="saved" id="addressSaved" checked>
+                  <label class="form-check-label" for="addressSaved">Koristi sačuvanu adresu</label>
+                </div>
+                <div id="saved-address-container" class="ms-4 mb-3">
+                  <select name="addressId" class="form-select">
+                    <% data.customer.kontakt.adrese.forEach(function(addr) { %>
+                      <option value="<%= addr.id %>"><%= addr.punaAdresa %></option>
+                    <% }); %>
+                  </select>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="addressSelection" value="new" id="addressNew">
+                  <label class="form-check-label" for="addressNew">Unesi novu adresu</label>
+                </div>
+                <div id="new-address-container" class="ms-4 d-none">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="newCity" class="form-label">Grad <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="newCity" name="newAddress[city]">
+                      <% if (data.errors && data.errors['newAddress.city']) { %>
+                        <div class="text-danger small mt-1"><%= data.errors['newAddress.city'] %></div>
+                      <% } %>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="newPostalCode" class="form-label">Poštanski broj <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="newPostalCode" name="newAddress[postalCode]">
+                      <% if (data.errors && data.errors['newAddress.postalCode']) { %>
+                        <div class="text-danger small mt-1"><%= data.errors['newAddress.postalCode'] %></div>
+                      <% } %>
+                    </div>
+                    <div class="col-md-8">
+                      <label for="newStreet" class="form-label">Ulica <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="newStreet" name="newAddress[street]">
+                      <% if (data.errors && data.errors['newAddress.street']) { %>
+                        <div class="text-danger small mt-1"><%= data.errors['newAddress.street'] %></div>
+                      <% } %>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="newNumber" class="form-label">Broj <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="newNumber" name="newAddress[number]">
+                      <% if (data.errors && data.errors['newAddress.number']) { %>
+                        <div class="text-danger small mt-1"><%= data.errors['newAddress.number'] %></div>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" name="hasNewAddress" id="hasNewAddress" value="false">
+            <% } else { %>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="newCity" class="form-label">Grad <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="newCity" name="newAddress[city]" required>
+                  <% if (data.errors && data.errors['newAddress.city']) { %>
+                    <div class="text-danger small mt-1"><%= data.errors['newAddress.city'] %></div>
+                  <% } %>
+                </div>
+                <div class="col-md-6">
+                  <label for="newPostalCode" class="form-label">Poštanski broj <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="newPostalCode" name="newAddress[postalCode]" required>
+                  <% if (data.errors && data.errors['newAddress.postalCode']) { %>
+                    <div class="text-danger small mt-1"><%= data.errors['newAddress.postalCode'] %></div>
+                  <% } %>
+                </div>
+                <div class="col-md-8">
+                  <label for="newStreet" class="form-label">Ulica <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="newStreet" name="newAddress[street]" required>
+                  <% if (data.errors && data.errors['newAddress.street']) { %>
+                    <div class="text-danger small mt-1"><%= data.errors['newAddress.street'] %></div>
+                  <% } %>
+                </div>
+                <div class="col-md-4">
+                  <label for="newNumber" class="form-label">Broj <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="newNumber" name="newAddress[number]" required>
+                  <% if (data.errors && data.errors['newAddress.number']) { %>
+                    <div class="text-danger small mt-1"><%= data.errors['newAddress.number'] %></div>
+                  <% } %>
+                </div>
+              </div>
+              <input type="hidden" name="hasNewAddress" value="true">
+            <% } %>
+          </div>
+        </div>
+
+        <!-- ====== KREIRANJE NALOGA (samo za goste) ====== -->
+        <% if (!data.customer) { %>
+          <div class="card shadow-sm mb-4">
+            <div class="card-body">
+              <h2 class="h5 card-title mb-3">
+                <i class="bi bi-person-plus-fill me-2"></i> Kreirajte nalog (opciono)
+              </h2>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="createNewAccount" value="true" id="createNewAccount">
+                <label class="form-check-label" for="createNewAccount">
+                  Kreiraj nalog sa unetim podacima (lozinka će biti poslata na email)
+                </label>
+              </div>
+              <div class="form-text mt-2">
+                <i class="bi bi-info-circle"></i> Ukoliko kreirate nalog, moći ćete da pratite status porudžbine i brže kupujete sledeći put.
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- ====== KUPON ====== -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title mb-3">
+              <i class="bi bi-ticket-perforated-fill me-2"></i> Kupon
+            </h2>
+            <div class="row g-2">
+              <div class="col">
+                <input type="text" class="form-control" id="couponCode" name="couponCode" placeholder="Unesite kod kupona">
+              </div>
+              <div class="col-auto">
+                <button type="button" id="applyCouponBtn" class="btn btn-outline-secondary">Primeni</button>
+              </div>
+              <div class="col-auto d-none" id="removeCouponWrapper">
+                <button type="button" id="removeCouponBtn" class="btn btn-outline-danger">Ukloni</button>
+              </div>
+            </div>
+            <div id="couponMessage" class="mt-2 d-none">
+              <span id="couponMessageText"></span>
+            </div>
+            <input type="hidden" name="appliedCoupon" id="appliedCoupon" value="">
+          </div>
+        </div>
+
+        <!-- ====== NAPOMENA ====== -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title mb-3">
+              <i class="bi bi-pencil-fill me-2"></i> Napomena (opciono)
+            </h2>
+            <textarea class="form-control" name="note" id="orderNote" rows="3" placeholder="Posebne instrukcije za dostavu..."></textarea>
+          </div>
+        </div>
+
+        <!-- ====== USLOVI ====== -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="acceptTerms" value="true" id="acceptTerms" required>
+              <label class="form-check-label" for="acceptTerms">
+                Prihvatam <a href="/uslovi-koriscenja" target="_blank">uslove korišćenja</a>
+                i dajem saglasnost za obradu podataka.
+              </label>
+            </div>
+            <% if (data.errors && data.errors.acceptTerms) { %>
+              <div class="text-danger small mt-1"><%= data.errors.acceptTerms %></div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Honeypot -->
+        <div class="d-none">
+          <label for="website">Nemojte popunjavati</label>
+          <input type="text" name="website" id="website" value="">
+        </div>
+      </form>
+    </div>
+
+    <!-- DESNA STRANA: Sažetak korpe -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm checkout-sidebar">
+        <div class="card-body">
+          <h2 class="h5 card-title mb-3">
+            <i class="bi bi-cart-fill me-2"></i> Vaša korpa
+          </h2>
+          <div class="list-group list-group-flush mb-3" style="max-height: 400px; overflow-y: auto;">
+            <% if (data.cart.items && data.cart.items.length > 0) { %>
+              <% data.cart.items.forEach(function(item) { %>
+                <div class="list-group-item px-0">
+                  <div class="row g-2 align-items-center">
+                    <div class="col-3">
+                      <img src="<%= item.image && item.image.img ? `/images/items/${item.image.img}` : '/images/placeholder.jpg' %>" 
+                           alt="<%= item.title %>" class="img-fluid rounded">
+                    </div>
+                    <div class="col-9">
+                      <h3 class="h6 mb-1"><%= item.title %></h3>
+                      <div class="small text-muted">
+                        <span class="me-2">Veličina: <%= item.size %></span>
+                        <span>Boja: <%= item.color %></span>
+                      </div>
+                      <div class="small text-muted">Količina: <%= item.quantity %></div>
+                      <div class="fw-bold mt-1"><%= item.price %> RSD</div>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            <% } else { %>
+              <div class="text-center text-muted py-4">
+                <i class="bi bi-cart-x fs-1"></i>
+                <p class="mt-2 mb-0">Korpa je prazna</p>
+              </div>
+            <% } %>
+          </div>
+
+          <hr>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Podukup:</span>
+            <span id="subtotal"><%= data.cart.subtotal %> RSD</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Dostava:</span>
+            <span><%= data.cart.shipping %> RSD</span>
+          </div>
+          <div id="discountRow" class="d-flex justify-content-between text-success mb-2 d-none">
+            <span>Popust:</span>
+            <span id="discountAmount">0 RSD</span>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between fw-bold fs-5">
+            <span>Ukupno:</span>
+            <span id="totalPrice" data-original-total="<%= data.cart.total %>"><%= data.cart.total %> RSD</span>
+          </div>
+
+          <button type="submit" form="checkout-form" id="submitOrderBtn" class="btn btn-primary w-100 mt-4 py-2">
+            <i class="bi bi-check-lg me-2"></i> Potvrdi porudžbinu
+          </button>
+          <div class="small text-muted text-center mt-3">
+            <i class="bi bi-envelope-paper-fill me-1"></i>
+            Klikom na "Potvrdi porudžbinu" bićete preusmereni na email verifikaciju.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- META TAGOVI ZA CSRF I API TOKEN -->
+<meta name="csrf-token" content="<%= csrfToken %>">
+<meta name="api-token" content="<%= user?.token || '' %>">
+
+<script src="/js/checkout.js"></script>
+<%- include('../includes/footer') %>

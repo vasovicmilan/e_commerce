@@ -1,0 +1,41 @@
+<% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
+<nav aria-label="Navigacija po stranama">
+  <ul class="pagination justify-content-center">
+    
+    <li class="page-item<%= pagination.currentPage <= 1 ? ' disabled' : '' %>">
+      <a class="page-link" href="<%= pagination.currentPage > 1 ? pageUrl(pagination.currentPage - 1) : '#' %>" 
+         aria-label="Prethodna strana">
+        <span aria-hidden="true">&lsaquo;</span>
+      </a>
+    </li>
+    
+    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+      <li class="page-item<%= i === pagination.currentPage ? ' active' : '' %>" 
+          <%= i === pagination.currentPage ? 'aria-current="page"' : '' %>>
+        <a class="page-link" href="<%= pageUrl(i) %>"><%= i %></a>
+      </li>
+    <% } %>
+    
+    <li class="page-item<%= pagination.currentPage >= pagination.totalPages ? ' disabled' : '' %>">
+      <a class="page-link" href="<%= pagination.currentPage < pagination.totalPages ? pageUrl(pagination.currentPage + 1) : '#' %>" 
+         aria-label="Sledeća strana">
+        <span aria-hidden="true">&rsaquo;</span>
+      </a>
+    </li>
+    
+  </ul>
+</nav>
+<% } %>
+
+<%
+function pageUrl(page) {
+  const params = new URLSearchParams(pagination.query || {});
+  if (page <= 1) {
+    params.delete("page");
+  } else {
+    params.set("page", page);
+  }
+  const queryString = params.toString();
+  return queryString ? `${pagination.basePath}?${queryString}` : pagination.basePath;
+}
+%>

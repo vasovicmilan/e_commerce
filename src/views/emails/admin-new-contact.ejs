@@ -1,0 +1,16 @@
+<%
+subject = `Nova kontakt poruka od ${contact.firstName || contact.ime || 'korisnika'} - ${SITE_NAME}`;
+body = `
+  <p>Poštovani,</p>
+  <p>Primljena je nova kontakt poruka.</p>
+  <p><strong>Ime:</strong> ${contact.firstName || contact.ime || ''} ${contact.lastName || contact.prezime || ''}</p>
+  <p><strong>Email:</strong> ${contact.email || ''}</p>
+  <p><strong>Poruka:</strong></p>
+  <blockquote style="background:#f5f5f5; padding:15px; border-left:4px solid #e91e63;">${contact.message || contact.poruka || ''}</blockquote>
+  <p style="text-align:center; margin:25px 0;">
+    <a href="${adminUrl}" style="display:inline-block; background-color:#2196f3; color:#ffffff; padding:12px 30px; text-decoration:none; border-radius:4px;">Pogledaj detalje</a>
+  </p>
+  <p style="color:#999; font-size:14px;">Ovo je automatska poruka za administratore.</p>
+`;
+%>
+<%- include("_layout") %>

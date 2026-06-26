@@ -1,0 +1,101 @@
+<%- include('../includes/head') %>
+
+<div class="container py-4">
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Početna</a></li>
+      <li class="breadcrumb-item"><a href="/prodavnica">Prodavnica</a></li>
+      <li class="breadcrumb-item active">Pretraga: <%= data.search %></li>
+    </ol>
+  </nav>
+
+  <!-- Search header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+    <h1 class="h2 mb-3 mb-md-0">
+      <i class="bi bi-search me-2"></i>Rezultati pretrage
+    </h1>
+    <form action="/prodavnica/pretraga" method="GET" class="d-flex gap-2 w-100 w-md-auto">
+      <input type="text" name="q" class="form-control" value="<%= data.search %>" placeholder="Pretraži proizvode...">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+    </form>
+  </div>
+
+  <!-- Results count -->
+  <div class="alert alert-light border mb-4">
+    <i class="bi bi-info-circle me-2"></i>
+    Pronađeno <strong><%= data.items.length %></strong> rezultata za „<%= data.search %>”.
+  </div>
+
+  <% if (data.items && data.items.length > 0) { %>
+    <div class="row g-4">
+      <% data.items.forEach(function(item) { %>
+        <div class="col-sm-6 col-lg-4 col-xl-3">
+          <div class="card h-100 shadow-sm">
+            <img src="<%= item.slika?.url || '/images/placeholder.jpg' %>" 
+                 class="card-img-top" 
+                 alt="<%= item.naziv %>"
+                 style="height: 200px; object-fit: cover;">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">
+                <a href="/prodavnica/artikal/<%= item.slug %>" class="text-decoration-none text-dark stretched-link">
+                  <%= item.naziv %>
+                </a>
+              </h5>
+              <p class="card-text small text-muted"><%= item.kratakOpis %></p>
+              <div class="mt-auto">
+                <div class="fw-bold fs-5 mb-2">
+                  <%= item.cena %> RSD
+                  <% if (item.naAkciji && item.originalnaCena) { %>
+                    <span class="text-muted text-decoration-line-through fs-6 ms-2"><%= item.originalnaCena %> RSD</span>
+                  <% } %>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge bg-secondary"><i class="bi bi-star-fill me-1"></i><%= item.prosecnaOcena %></span>
+                  <a href="/prodavnica/artikal/<%= item.slug %>" class="btn btn-sm btn-outline-primary">Detalji <i class="bi bi-arrow-right"></i></a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (data.pagination && data.pagination.totalPages > 1) { %>
+      <nav class="mt-5">
+        <ul class="pagination justify-content-center">
+          <% if (data.pagination.currentPage > 1) { %>
+            <li class="page-item">
+              <a class="page-link" href="?q=<%= encodeURIComponent(data.search) %>&page=<%= data.pagination.currentPage - 1 %>">
+                <i class="bi bi-chevron-left"></i>
+              </a>
+            </li>
+          <% } %>
+          <% for (let i = 1; i <= data.pagination.totalPages; i++) { %>
+            <li class="page-item <%= i === data.pagination.currentPage ? 'active' : '' %>">
+              <a class="page-link" href="?q=<%= encodeURIComponent(data.search) %>&page=<%= i %>"><%= i %></a>
+            </li>
+          <% } %>
+          <% if (data.pagination.currentPage < data.pagination.totalPages) { %>
+            <li class="page-item">
+              <a class="page-link" href="?q=<%= encodeURIComponent(data.search) %>&page=<%= data.pagination.currentPage + 1 %>">
+                <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    <% } %>
+
+  <% } else { %>
+    <div class="text-center py-5">
+      <i class="bi bi-emoji-frown fs-1 text-muted"></i>
+      <h3 class="h4 mt-3">Nema rezultata</h3>
+      <p class="text-muted">Nismo pronašli proizvode koji odgovaraju vašoj pretrazi.</p>
+      <a href="/prodavnica" class="btn btn-primary mt-2">Prikaži sve proizvode</a>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../includes/footer') %>

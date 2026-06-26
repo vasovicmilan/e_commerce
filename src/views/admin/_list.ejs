@@ -1,0 +1,188 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container-fluid py-4">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+  
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h3 mb-0"><%= pageTitle %></h1>
+    <div class="d-flex gap-2">
+      <% if (typeof data.topbar?.searchUrl !== 'undefined') { %>
+        <%- include("../includes/components/search", { searchUrl: data.topbar.searchUrl, search: data.topbar.search }) %>
+      <% } %>
+      <% if (typeof data.topbar?.createUrl !== 'undefined') { %>
+        <a href="<%= data.topbar.createUrl %>" class="btn btn-primary">
+          <i class="bi bi-plus-lg"></i> <%= data.topbar.createLabel || "Dodaj" %>
+        </a>
+      <% } %>
+    </div>
+  </div>
+  
+  <% if (typeof data.topbar?.filters !== 'undefined' && data.topbar.filters.length > 0) { %>
+    <div class="card mb-4">
+      <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end" id="filterForm">
+          <% data.topbar.filters.forEach(function(filter) { %>
+            <div class="col-auto">
+              <label class="form-label small text-muted"><%= filter.label %></label>
+              <% if (filter.type === 'select') { %>
+                <select name="<%= filter.name %>" class="form-select form-select-sm" data-auto-submit>
+                  <% if (filter.options && filter.options.length) { %>
+                    <% filter.options.forEach(function(opt) { %>
+                      <option value="<%= opt.value %>" <%= filter.value === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                    <% }) %>
+                  <% } else { %>
+                    <option value="">Nema opcija</option>
+                  <% } %>
+                </select>
+              <% } else if (filter.type === 'text') { %>
+                <input type="text" name="<%= filter.name %>" class="form-control form-control-sm" 
+                       value="<%= filter.value || '' %>" placeholder="<%= filter.placeholder || '' %>" 
+                       data-auto-submit>
+              <% } else if (filter.type === 'date') { %>
+                <input type="date" name="<%= filter.name %>" class="form-control form-control-sm" 
+                       value="<%= filter.value || '' %>" data-auto-submit>
+              <% } else if (filter.type === 'daterange') { %>
+                <div class="input-group input-group-sm">
+                  <input type="date" name="<%= filter.name %>_from" class="form-control" 
+                         value="<%= (filter.value && filter.value.from) || '' %>" placeholder="Od" data-auto-submit>
+                  <span class="input-group-text">—</span>
+                  <input type="date" name="<%= filter.name %>_to" class="form-control" 
+                         value="<%= (filter.value && filter.value.to) || '' %>" placeholder="Do" data-auto-submit>
+                </div>
+              <% } else if (filter.type === 'number') { %>
+                <input type="number" name="<%= filter.name %>" class="form-control form-control-sm" 
+                       value="<%= filter.value || '' %>" placeholder="<%= filter.placeholder || '' %>" 
+                       min="<%= filter.min || '' %>" max="<%= filter.max || '' %>" step="<%= filter.step || '1' %>"
+                       data-auto-submit>
+              <% } else { %>
+                <input type="text" name="<%= filter.name %>" class="form-control form-control-sm" 
+                       value="<%= filter.value || '' %>" placeholder="<%= filter.label %>">
+              <% } %>
+            </div>
+          <% }) %>
+          <div class="col-auto">
+            <a href="<%= data.pagination?.basePath || '.' %>" class="btn btn-outline-secondary btn-sm">Poništi filtere</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  <% } %>
+  
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <% data.columns.forEach(function(col) { %>
+                <th scope="col" class="text-nowrap"><%= col.label %></th>
+              <% }) %>
+              <th scope="col" class="text-end" data-col-actions>Akcije</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (data.items && data.items.length > 0) { %>
+              <% data.items.forEach(function(item) { %>
+                <tr>
+                  <% data.columns.forEach(function(col) { %>
+                    <td>
+                      <% if (col.key === 'slika' && item[col.key]) { %>
+                        <!-- 🔥 IZMENA: koristi direktno item[col.key] jer već sadrži punu putanju -->
+                        <img src="<%= item[col.key] %>" alt="" class="rounded table-img-thumb">
+                      <% } else if (typeof item[col.key] === 'boolean') { %>
+                        <span class="badge bg-<%= item[col.key] ? 'success' : 'secondary' %>"><%= item[col.key] ? 'Da' : 'Ne' %></span>
+                      <% } else if (col.key === 'type' && item[col.key]) { %>
+                        <span class="badge bg-<%= item[col.key] === 'earnings' ? 'success' : 
+                                             item[col.key] === 'withdrawal' ? 'warning' : 
+                                             item[col.key] === 'level_up' ? 'info' : 
+                                             item[col.key] === 'bonus' ? 'primary' : 
+                                             item[col.key] === 'adjustment' ? 'secondary' : 'secondary' %>">
+                          <%= item[col.key] %>
+                        </span>
+                      <% } else { %>
+                        <% if (item[col.key]) { %>
+                          <%= item[col.key] %>
+                        <% } else { %>
+                          <span class="text-muted">—</span>
+                        <% } %>
+                      <% } %>
+                    </td>
+                  <% }) %>
+                  <td class="text-end text-nowrap" data-col-actions>
+                    <% if (typeof data.actions !== 'undefined') { %>
+                      <% 
+                        // Izračunaj itemId JEDNOM za ovaj red
+                        const itemId = item.id || item._id; 
+                      %>
+                      <% if (itemId) { %>
+                        <% data.actions.forEach(function(action) { %>
+                          <% if (action.type === 'view') { %>
+                            <a href="<%= action.url %><%= itemId %>" class="btn btn-sm btn-outline-secondary" title="<%= action.label || 'Detalji' %>">
+                              <i class="bi bi-<%= action.icon || 'eye' %>"></i>
+                            </a>
+                          <% } else if (action.type === 'edit') { %>
+                            <a href="<%= action.url %><%= itemId %>" class="btn btn-sm btn-outline-warning" title="<%= action.label || 'Izmeni' %>">
+                              <i class="bi bi-<%= action.icon || 'pencil' %>"></i>
+                            </a>
+                          <% } else if (action.type === 'delete') { %>
+                            <form action="<%= action.url %><%= itemId %>" method="POST" class="d-inline">
+                              <input type="hidden" name="_method" value="DELETE">
+                              <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+                              <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                      data-delete data-confirm="Da li ste sigurni?">
+                                <i class="bi bi-trash"></i>
+                              </button>
+                            </form>
+                          <% } else if (action.type === 'custom') { %>
+                            <% if (action.subPath) { %>
+                              <a href="<%= action.url %><%= itemId %>/<%= action.subPath %>" class="btn btn-sm btn-outline-info" title="<%= action.label || '' %>">
+                                <i class="bi bi-<%= action.icon || 'gear' %>"></i>
+                              </a>
+                            <% } %>
+                          <% } %>
+                        <% }) %>
+                      <% } %>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="<%= data.columns.length + 1 %>" class="text-center py-5 text-muted">
+                  <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                  Nema podataka za prikaz
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <%- include("../includes/pagination") %>
+
+  <!-- Modal za potvrdu brisanja -->
+  <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteConfirmModalLabel">Potvrda brisanja</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zatvori"></button>
+        </div>
+        <div class="modal-body">
+          <p id="deleteConfirmMessage">Da li ste sigurni da želite da obrišete?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+          <button type="button" class="btn btn-danger" id="deleteConfirmBtn">Obriši</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/js/delete-confirm.js"></script>
+<%- include("../includes/footer") %>

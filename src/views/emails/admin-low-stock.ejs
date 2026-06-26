@@ -1,0 +1,13 @@
+<%
+subject = `Nisko stanje: ${item.title || item.naziv || 'artikal'} - ${SITE_NAME}`;
+body = `
+  <p>Poštovani,</p>
+  <p>Stanje artikla <strong>${item.title || item.naziv}</strong> je nisko.</p>
+  <p><strong>Preostala količina:</strong> ${item.stock || item.kolicina || 0}</p>
+  <p style="text-align:center; margin:25px 0;">
+    <a href="${adminUrl}" style="display:inline-block; background-color:#ff9800; color:#ffffff; padding:12px 30px; text-decoration:none; border-radius:4px;">Pogledaj artikal</a>
+  </p>
+  <p style="color:#999; font-size:14px;">Ovo je automatska poruka za administratore.</p>
+`;
+%>
+<%- include("_layout") %>

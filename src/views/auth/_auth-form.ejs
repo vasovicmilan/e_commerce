@@ -1,0 +1,152 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="h3 text-center mb-4"><%= data.formTitle %></h1>
+
+          <% if (data.errors && data.errors.general) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <%= data.errors.general %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+
+          <!-- Flash success poruka - samo ako postoji i nije prazna -->
+          <% if (flash.success && flash.success.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <i class="bi bi-check-circle-fill me-2"></i>
+              <%= Array.isArray(flash.success) ? flash.success.join(', ') : flash.success %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+
+          <!-- Flash error poruka - samo ako postoji i nije prazna -->
+          <% if (flash.error && flash.error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <%= Array.isArray(flash.error) ? flash.error.join(', ') : flash.error %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+
+          <form action="<%= data.formAction %>" method="POST" novalidate>
+            <!-- CSRF TOKEN -->
+            <input type="hidden" name="CSRFToken" value="<%= locals.csrfToken %>">
+            
+            <!-- SPAM PROTECTION - hidden honeypot -->
+            <input type="hidden" name="nickname" value="">
+            
+            <% data.fields.forEach(field => { %>
+              <% if (field.type === "hidden") { %>
+                <input type="hidden" name="<%= field.name %>" value="<%= field.value %>">
+              <% } else if (field.type === "checkbox") { %>
+                <div class="mb-3 form-check">
+                  <input type="checkbox" 
+                         class="form-check-input <%= data.errors && data.errors[field.name] ? 'is-invalid' : '' %>" 
+                         id="<%= field.name %>" 
+                         name="<%= field.name %>" 
+                         <%= field.value ? 'checked' : '' %>>
+                  <label class="form-check-label" for="<%= field.name %>">
+                    <%= field.label %>
+                    <% if (field.required) { %><span class="text-danger">*</span><% } %>
+                  </label>
+                  <% if (data.errors && data.errors[field.name]) { %>
+                    <div class="invalid-feedback"><%= data.errors[field.name] %></div>
+                  <% } %>
+                </div>
+              <% } else if (field.type === "select") { %>
+                <div class="mb-3">
+                  <label for="<%= field.name %>" class="form-label">
+                    <%= field.label %>
+                    <% if (field.required) { %><span class="text-danger">*</span><% } %>
+                  </label>
+                  <select class="form-select <%= data.errors && data.errors[field.name] ? 'is-invalid' : '' %>" 
+                          id="<%= field.name %>" 
+                          name="<%= field.name %>" 
+                          <%= field.required ? 'required' : '' %>>
+                    <% field.options.forEach(option => { %>
+                      <option value="<%= option.value %>" <%= data.formData && data.formData[field.name] === option.value ? 'selected' : '' %>>
+                        <%= option.label %>
+                      </option>
+                    <% }) %>
+                  </select>
+                  <% if (data.errors && data.errors[field.name]) { %>
+                    <div class="invalid-feedback"><%= data.errors[field.name] %></div>
+                  <% } %>
+                </div>
+              <% } else if (field.type === "textarea") { %>
+                <div class="mb-3">
+                  <label for="<%= field.name %>" class="form-label">
+                    <%= field.label %>
+                    <% if (field.required) { %><span class="text-danger">*</span><% } %>
+                  </label>
+                  <textarea class="form-control <%= data.errors && data.errors[field.name] ? 'is-invalid' : '' %>" 
+                            id="<%= field.name %>" 
+                            name="<%= field.name %>" 
+                            rows="<%= field.rows || 3 %>"
+                            <%= field.required ? 'required' : '' %>><%= data.formData && data.formData[field.name] ? data.formData[field.name] : (field.value || '') %></textarea>
+                  <% if (data.errors && data.errors[field.name]) { %>
+                    <div class="invalid-feedback"><%= data.errors[field.name] %></div>
+                  <% } %>
+                </div>
+              <% } else { %>
+                <div class="mb-3">
+                  <label for="<%= field.name %>" class="form-label">
+                    <%= field.label %>
+                    <% if (field.required) { %><span class="text-danger">*</span><% } %>
+                  </label>
+                  <input type="<%= field.type %>" 
+                         class="form-control <%= data.errors && data.errors[field.name] ? 'is-invalid' : '' %>" 
+                         id="<%= field.name %>" 
+                         name="<%= field.name %>" 
+                         value="<%= data.formData && data.formData[field.name] ? data.formData[field.name] : (field.value || '') %>"
+                         <%= field.required ? 'required' : '' %>
+                         <%= field.placeholder ? `placeholder="${field.placeholder}"` : '' %>>
+                  <% if (data.errors && data.errors[field.name]) { %>
+                    <div class="invalid-feedback"><%= data.errors[field.name] %></div>
+                  <% } %>
+                  <% if (field.help) { %>
+                    <div class="form-text"><%= field.help %></div>
+                  <% } %>
+                </div>
+              <% } %>
+            <% }) %>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+              <%= data.submitLabel %>
+            </button>
+
+            <% if (data.formTitle === "Prijavite se" || data.formTitle === "Kreirajte nalog") { %>
+              <hr class="my-4">
+              <div class="text-center">
+                <p class="text-muted mb-2">ili se prijavite preko</p>
+                <a href="/auth/google" class="btn btn-outline-danger w-100">
+                  <i class="bi bi-google me-2"></i>Google nalog
+                </a>
+              </div>
+            <% } %>
+
+            <% if (data.footerLinks && data.footerLinks.length) { %>
+              <div class="text-center mt-4">
+                <% data.footerLinks.forEach((link, index) => { %>
+                  <a href="<%= link.url %>" class="text-decoration-none <%= index > 0 ? 'ms-3' : '' %>">
+                    <%= link.label %>
+                  </a>
+                <% }) %>
+              </div>
+            <% } %>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<% console.log("Flash success:", flash.success); %>
+<% console.log("Flash error:", flash.error); %>
+<%- include("../includes/footer") %>

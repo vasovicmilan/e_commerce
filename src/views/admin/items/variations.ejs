@@ -1,0 +1,385 @@
+<%- include("../../includes/head") %>
+<%- include("../../includes/navigation") %>
+
+<main class="container-fluid py-4" data-item-id="<%= data.item.id %>">
+  <%- include("../../includes/flash-messages") %>
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Varijacije - <%= data.item.osnovno.naziv %></h1>
+    <div>
+      <a href="/admin/artikli/detalji/<%= data.item.id %>" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Nazad na artikal
+      </a>
+    </div>
+  </div>
+  
+  <div class="row g-4">
+    <!-- Forma za dodavanje varijacije -->
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Dodaj varijaciju</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="/admin/artikli/<%= data.item.id %>/varijacije" 
+                enctype="multipart/form-data" data-form>
+            
+            <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+            
+            <div class="mb-3">
+              <label for="varSize" class="form-label">Veličina *</label>
+              <select id="varSize" name="size" class="form-select" required>
+                <option value="">Izaberite veličinu</option>
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+                <option value="3XL">3XL</option>
+                <option value="4XL">4XL</option>
+                <option value="5XL">5XL</option>
+              </select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="varColor" class="form-label">Boja *</label>
+              <input type="text" id="varColor" name="color" class="form-control" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="varAmount" class="form-label">Količina *</label>
+              <input type="number" id="varAmount" name="amount" class="form-control" min="0" value="0" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="varPrice" class="form-label">Cena *</label>
+              <input type="number" id="varPrice" name="price" class="form-control" min="2" value="2" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="varActionPrice" class="form-label">Akcijska cena</label>
+              <input type="number" id="varActionPrice" name="actionPrice" class="form-control" min="1" value="1">
+            </div>
+            
+            <div class="mb-3">
+              <div class="form-check">
+                <input type="hidden" name="onAction" value="0">
+                <input type="checkbox" id="varOnAction" name="onAction" class="form-check-input" value="1">
+                <label class="form-check-label" for="varOnAction">Na akciji</label>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="varImage" class="form-label">Slika *</label>
+              <input type="file" id="varImage" name="variationImage" class="form-control" 
+                     accept="image/jpeg,image/png,image/webp" required
+                     data-file-preview="varImage_preview">
+              <div id="varImage_preview" class="mt-2 d-none">
+                <img src="" alt="Pregled slike" class="rounded form-img-preview">
+              </div>
+            </div>
+            
+            <!-- Mere -->
+            <hr>
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="form-label fw-bold mb-0">Mere (opciono)</label>
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle-measurements>
+                <i class="bi bi-chevron-down"></i> Prikaži mere
+              </button>
+            </div>
+            <div id="measurementsContainer" class="d-none mt-3">
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label for="measurements_unit" class="form-label small">Jedinica</label>
+                  <select id="measurements_unit" name="measurements_unit" class="form-select form-select-sm">
+                    <option value="cm">cm</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_bust" class="form-label small">Grudi (bust)</label>
+                  <input type="number" id="measurements_bust" name="measurements_bust" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_chest" class="form-label small">Grudni koš (chest)</label>
+                  <input type="number" id="measurements_chest" name="measurements_chest" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_sleeve" class="form-label small">Dužina rukava</label>
+                  <input type="number" id="measurements_sleeve" name="measurements_sleeve" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_length" class="form-label small">Ukupna dužina</label>
+                  <input type="number" id="measurements_length" name="measurements_length" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_waist" class="form-label small">Struk</label>
+                  <input type="number" id="measurements_waist" name="measurements_waist" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_hips" class="form-label small">Kukovi</label>
+                  <input type="number" id="measurements_hips" name="measurements_hips" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_inseam" class="form-label small">Unutrašnja dužina nogavice</label>
+                  <input type="number" id="measurements_inseam" name="measurements_inseam" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_rise" class="form-label small">Visina struka</label>
+                  <input type="number" id="measurements_rise" name="measurements_rise" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-md-6">
+                  <label for="measurements_thigh" class="form-label small">Obim butine</label>
+                  <input type="number" id="measurements_thigh" name="measurements_thigh" class="form-control form-control-sm" min="0" step="0.5" placeholder="cm">
+                </div>
+                <div class="col-12">
+                  <label for="measurements_note" class="form-label small">Napomena</label>
+                  <input type="text" id="measurements_note" name="measurements_note" class="form-control form-control-sm" placeholder="Npr. 'mereno na ravno'">
+                </div>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 mt-3" data-submit-btn>
+              <i class="bi bi-plus-lg"></i> <span data-submit-label>Dodaj varijaciju</span>
+              <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Lista postojećih varijacija -->
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Postojeće varijacije (<%= data.item.varijacije?.length || 0 %>)</h5>
+        </div>
+        <div class="card-body p-0">
+          <% if (data.item.varijacije && data.item.varijacije.length > 0) { %>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Slika</th>
+                    <th>Veličina</th>
+                    <th>Boja</th>
+                    <th>Cena</th>
+                    <th>Akcijska</th>
+                    <th>Količina</th>
+                    <th>Mere</th>
+                    <th class="text-end">Akcije</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% data.item.varijacije.forEach(function(v) { %>
+                    <tr>
+                      <td>
+                        <% if (v.slika && v.slika.url) { %>
+                          <img src="/images/items/<%= v.slika.url %>" alt="<%= v.slika.opis || v.boja %>" class="rounded table-img-thumb">
+                        <% } else { %>
+                          <span class="text-muted">—</span>
+                        <% } %>
+                      </td>
+                      <td><%= v.velicina || '-' %></td>
+                      <td><%= v.boja || '-' %></td>
+                      <td><%= v.cena ? v.cena + ' RSD' : '-' %></td>
+                      <td>
+                        <% if (v.akcijskaCena) { %>
+                          <span class="text-danger"><%= v.akcijskaCena %> RSD</span>
+                        <% } else { %>
+                          <span class="text-muted">—</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (v.naStanju) { %>
+                          <span class="badge bg-success"><%= v.kolicina %></span>
+                        <% } else { %>
+                          <span class="badge bg-danger">0</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (v.merenja && Object.keys(v.merenja).length > 0) { %>
+                          <button type="button" class="btn btn-sm btn-outline-info" 
+                                  data-bs-toggle="popover" 
+                                  data-bs-placement="left"
+                                  data-bs-html="true"
+                                  data-measurements="<%= encodeURIComponent(JSON.stringify(v.merenja)) %>">
+                            <i class="bi bi-rulers"></i>
+                          </button>
+                        <% } else { %>
+                          <span class="text-muted">—</span>
+                        <% } %>
+                      </td>
+                      <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-warning" 
+                                data-bs-toggle="modal" data-bs-target="#editVariationModal"
+                                data-variation='<%- JSON.stringify(v).replace(/"/g, "&quot;") %>' 
+                                data-item-id="<%= data.item.id %>">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <form action="/admin/artikli/<%= data.item.id %>/varijacije/<%= v.id %>?_method=DELETE" 
+                              method="POST" class="d-inline">
+                          <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+                          <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                  data-delete data-confirm="Obrisati varijaciju?">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Nema dodatih varijacija
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal za editovanje varijacije -->
+<div class="modal fade" id="editVariationModal" tabindex="-1" aria-labelledby="editVariationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editVariationModalLabel">Izmena varijacije</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zatvori"></button>
+      </div>
+      <form method="POST" id="editVariationForm" enctype="multipart/form-data" data-form>
+        <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+        <input type="hidden" name="_method" value="PUT">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Osnovni podaci -->
+            <div class="col-md-6">
+              <label for="editSize" class="form-label">Veličina</label>
+              <select id="editSize" name="size" class="form-select">
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+                <option value="3XL">3XL</option>
+                <option value="4XL">4XL</option>
+                <option value="5XL">5XL</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="editColor" class="form-label">Boja</label>
+              <input type="text" id="editColor" name="color" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label for="editAmount" class="form-label">Količina</label>
+              <input type="number" id="editAmount" name="amount" class="form-control" min="0">
+            </div>
+            <div class="col-md-4">
+              <label for="editPrice" class="form-label">Cena</label>
+              <input type="number" id="editPrice" name="price" class="form-control" min="2">
+            </div>
+            <div class="col-md-4">
+              <label for="editActionPrice" class="form-label">Akcijska cena</label>
+              <input type="number" id="editActionPrice" name="actionPrice" class="form-control" min="1">
+            </div>
+            <div class="col-md-12">
+              <div class="form-check">
+                <input type="hidden" name="onAction" value="0">
+                <input type="checkbox" id="editOnAction" name="onAction" class="form-check-input" value="1">
+                <label class="form-check-label" for="editOnAction">Na akciji</label>
+              </div>
+            </div>
+            
+            <!-- Slika -->
+            <div class="col-md-12">
+              <label for="editImage" class="form-label">Slika (ostavite prazno ako ne želite da menjate)</label>
+              <input type="file" id="editImage" name="variationImage" class="form-control" accept="image/jpeg,image/png,image/webp">
+              <div id="editImage_preview" class="mt-2">
+                <!-- JS će ovde ubaciti sliku -->
+              </div>
+            </div>
+            
+            <!-- Mere -->
+            <div class="col-12">
+              <hr>
+              <div class="d-flex justify-content-between align-items-center">
+                <label class="form-label fw-bold mb-0">Mere (opciono)</label>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle-measurements-edit>
+                  <i class="bi bi-chevron-down"></i> Prikaži mere
+                </button>
+              </div>
+              <div id="editMeasurementsContainer" class="d-none mt-3">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label small">Jedinica</label>
+                    <select name="measurements_unit" class="form-select form-select-sm">
+                      <option value="cm">cm</option>
+                      <option value="in">in</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Grudi</label>
+                    <input type="number" name="measurements_bust" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Grudni koš</label>
+                    <input type="number" name="measurements_chest" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Dužina rukava</label>
+                    <input type="number" name="measurements_sleeve" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Ukupna dužina</label>
+                    <input type="number" name="measurements_length" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Struk</label>
+                    <input type="number" name="measurements_waist" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Kukovi</label>
+                    <input type="number" name="measurements_hips" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Unutrašnja dužina nogavice</label>
+                    <input type="number" name="measurements_inseam" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Visina struka</label>
+                    <input type="number" name="measurements_rise" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Obim butine</label>
+                    <input type="number" name="measurements_thigh" class="form-control form-control-sm" min="0" step="0.5">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label small">Napomena</label>
+                    <input type="text" name="measurements_note" class="form-control form-control-sm" placeholder="Npr. 'mereno na ravno'">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+          <button type="submit" class="btn btn-primary" data-submit-btn>
+            <i class="bi bi-check-lg"></i> <span data-submit-label>Sačuvaj izmene</span>
+            <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/js/variations.js"></script>
+
+<%- include("../../includes/footer") %>

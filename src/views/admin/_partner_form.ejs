@@ -1,0 +1,145 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container-fluid py-4">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><%= pageTitle %></h1>
+    <a href="<%= data.cancelUrl %>" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Nazad
+    </a>
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card">
+        <div class="card-body">
+          <form method="POST" action="<%= data.formAction %>?_method=PUT" data-form id="partnerForm" enctype="multipart/form-data">
+            <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+            
+            <!-- Hidden polja za JSON -->
+            <input type="hidden" name="colors" id="colorsJson" value='<%= data.colorsJson || '[]' %>'>
+            <input type="hidden" name="fonts" id="fontsJson" value='<%= data.fontsJson || '[]' %>'>
+            
+            <div class="row g-3">
+              <!-- Status prodavnice -->
+              <div class="col-md-6">
+                <label for="shopStatus" class="form-label">Status prodavnice</label>
+                <select name="shopStatus" id="shopStatus" class="form-select">
+                  <option value="true" <%= data.shopStatus ? 'selected' : '' %>>Aktivan</option>
+                  <option value="false" <%= !data.shopStatus ? 'selected' : '' %>>Neaktivan</option>
+                </select>
+              </div>
+
+              <!-- Logo upload -->
+              <div class="col-md-6">
+                <label for="logoInput" class="form-label">Logo prodavnice</label>
+                <input type="file" name="partnerLogo" id="logoInput" class="form-control" accept="image/*">
+                <small class="text-muted d-block mt-1">Preporučena veličina: 200x200px (max 2MB)</small>
+                <div id="logoPreviewContainer" class="mt-2">
+                  <% if (data.logo) { %>
+                    <img src="<%= data.logo %>" alt="Trenutni logo" class="img-thumbnail" style="max-height:100px;">
+                    <p class="text-muted small mt-1">Trenutni logo</p>
+                  <% } else { %>
+                    <div class="text-muted small">Logo nije postavljen</div>
+                  <% } %>
+                </div>
+              </div>
+
+              <!-- ===== SLUG ===== -->
+              <div class="col-12">
+                <label for="slug" class="form-label">Slug (URL identifikator prodavnice)</label>
+                <div class="input-group">
+                  <span class="input-group-text">/partner/</span>
+                  <input type="text" name="slug" id="slug" class="form-control" 
+                         value="<%= data.slug || '' %>" 
+                         placeholder="npr. joksa10" 
+                         pattern="[a-z0-9-]+" 
+                         title="Samo mala slova, brojevi i crtice (-)">
+                  <span class="input-group-text">/prodavnica</span>
+                </div>
+                <div id="slugPreview" class="mt-2">
+                  <% if (data.slug) { %>
+                    <span class="badge bg-info">Javna ruta: /partner/<%= data.slug %>/prodavnica</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary">Nije postavljen</span>
+                  <% } %>
+                </div>
+                <small class="text-muted d-block mt-1">
+                  Koristi se za javnu prodavnicu. Dozvoljeni su samo mala slova, brojevi i crtice (-). 
+                  Jedinstven je i ne može se ponoviti.
+                </small>
+              </div>
+
+              <!-- Nivo -->
+              <div class="col-md-6">
+                <label for="level" class="form-label">Nivo</label>
+                <input type="number" name="level" id="level" class="form-control" 
+                       value="<%= data.level %>" min="0" step="1">
+              </div>
+
+              <!-- Poeni -->
+              <div class="col-md-6">
+                <label for="points" class="form-label">Poeni</label>
+                <input type="number" name="points" id="points" class="form-control" 
+                       value="<%= data.points %>" min="0" step="1">
+              </div>
+
+              <!-- Popust -->
+              <div class="col-md-6">
+                <label for="discount" class="form-label">Popust (%)</label>
+                <input type="number" name="discount" id="discount" class="form-control" 
+                       value="<%= data.discount %>" min="0" max="100" step="1">
+              </div>
+
+              <!-- Max ponuda -->
+              <div class="col-md-6">
+                <label for="maxOffers" class="form-label">Max ponuda</label>
+                <input type="number" name="maxOffers" id="maxOffers" class="form-control" 
+                       value="<%= data.maxOffers %>" min="1" step="1">
+              </div>
+
+              <!-- ===== BOJE ===== -->
+              <div class="col-12 mt-3">
+                <label class="form-label fw-bold">Boje prodavnice</label>
+                <div id="colorsContainer">
+                  <!-- Dinamički redovi za boje -->
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addColorBtn">
+                  <i class="bi bi-plus-circle"></i> Dodaj boju
+                </button>
+              </div>
+
+              <!-- ===== FONTOVI ===== -->
+              <div class="col-12 mt-3">
+                <label class="form-label fw-bold">Fontovi prodavnice</label>
+                <div id="fontsContainer">
+                  <!-- Dinamički redovi za fontove -->
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addFontBtn">
+                  <i class="bi bi-plus-circle"></i> Dodaj font
+                </button>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 pt-4 border-top mt-4">
+              <button type="submit" class="btn btn-primary" data-submit-btn>
+                <i class="bi bi-check-lg"></i> Sačuvaj izmene
+                <span class="spinner-border spinner-border-sm d-none" role="status" data-submit-spinner></span>
+              </button>
+              <a href="<%= data.cancelUrl %>" class="btn btn-outline-secondary">
+                <i class="bi bi-x-lg"></i> Odustani
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/js/partner-form.js"></script>
+
+<%- include("../includes/footer") %>

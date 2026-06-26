@@ -1,0 +1,18 @@
+<%
+subject = `Dobrodošli u ${SITE_NAME} - Vaš poklon kupon je unutra! 🎁`;
+body = `
+  <p>Zdravo ${firstName},</p>
+  <p>Dobrodošli u ${SITE_NAME}! Kao znak dobrodošlice, poklanjamo vam kupon za popust:</p>
+  <div style="background-color: #fce4ec; border: 2px dashed #e91e63; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0;">
+    <p style="font-size: 14px; color: #666; margin: 0 0 5px 0;">Vaš kod za popust</p>
+    <p style="font-size: 28px; font-weight: bold; color: #e91e63; letter-spacing: 3px; margin: 0 0 10px 0;">${couponCode}</p>
+    <p style="font-size: 18px; color: #333; margin: 0;">Popust: <strong>${formatDiscount}</strong></p>
+    ${validUntil ? `<p style="font-size: 12px; color: #999; margin: 10px 0 0 0;">Važi do: ${validUntil}</p>` : '<p style="font-size: 12px; color: #999; margin: 10px 0 0 0;">Bez vremenskog ograničenja</p>'}
+  </div>
+  <p style="text-align: center; margin: 25px 0;">
+    <a href="${shopUrl}" style="display: inline-block; background-color: #e91e63; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: bold;">Idi u prodavnicu</a>
+  </p>
+  <p style="color: #999; font-size: 14px;">Unesite kod na checkout stranici da biste ostvarili popust.</p>
+`;
+%>
+<%- include("_layout") %>

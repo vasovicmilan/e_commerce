@@ -1,0 +1,273 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container-fluid py-4">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><%= pageTitle %></h1>
+    <div class="d-flex gap-2">
+      <% if (typeof data.editUrl !== 'undefined') { %>
+        <a href="<%= data.editUrl %>" class="btn btn-warning">
+          <i class="bi bi-pencil"></i> Izmeni
+        </a>
+      <% } %>
+      <% if (typeof data.backUrl !== 'undefined') { %>
+        <a href="<%= data.backUrl %>" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Nazad
+        </a>
+      <% } %>
+    </div>
+  </div>
+  
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <% if (typeof data.sections !== 'undefined') { %>
+        <% data.sections.forEach(function(section) { %>
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="card-title mb-0"><%= section.title %></h5>
+            </div>
+            <div class="card-body">
+              <% if (section.type === 'table') { %>
+                <dl class="row mb-0">
+                  <% section.rows.forEach(function(row) { %>
+                    <dt class="col-sm-3 text-muted"><%= row.label %></dt>
+                    <dd class="col-sm-9"><%- row.value %></dd>
+                  <% }) %>
+                </dl>
+              <% } else if (section.type === 'list') { %>
+                <% if (section.itemType === 'permission') { %>
+                  <div class="d-flex flex-wrap gap-2">
+                    <% section.items.forEach(function(item) { %>
+                      <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill" 
+                            style="font-weight: 500; font-size: 0.9rem;"
+                            title="<%= item.kod %>">
+                        <i class="bi bi-shield-check me-1"></i>
+                        <%= item.naziv %>
+                      </span>
+                    <% }) %>
+                    <% if (section.items.length === 0) { %>
+                      <span class="text-muted">Nema dodeljenih permisija</span>
+                    <% } %>
+                  </div>
+                <% } else if (section.itemType === 'variation') { %>
+                  <% if (section.items && section.items.length > 0) { %>
+                    <div class="table-responsive">
+                      <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Slika</th>
+                            <th>Veličina</th>
+                            <th>Boja</th>
+                            <th>Cena</th>
+                            <th>Akcijska</th>
+                            <th>Količina</th>
+                            <th>Mere</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% section.items.forEach(function(v) { %>
+                            <tr>
+                              <td>
+                                <% if (v.slika && v.slika.url) { %>
+                                  <img src="/images/items/<%= v.slika.url %>" alt="<%= v.slika.opis || v.boja %>" class="rounded table-img-thumb">
+                                <% } else { %>
+                                  <span class="text-muted">—</span>
+                                <% } %>
+                              </td>
+                              <td><%= v.velicina || '-' %></td>
+                              <td><%= v.boja || '-' %></td>
+                              <td><%= v.cena ? v.cena + ' RSD' : '-' %></td>
+                              <td>
+                                <% if (v.akcijskaCena) { %>
+                                  <span class="text-danger"><%= v.akcijskaCena %> RSD</span>
+                                <% } else { %>
+                                  <span class="text-muted">—</span>
+                                <% } %>
+                              </td>
+                              <td>
+                                <% if (v.naStanju) { %>
+                                  <span class="badge bg-success"><%= v.kolicina %></span>
+                                <% } else { %>
+                                  <span class="badge bg-danger">0</span>
+                                <% } %>
+                              </td>
+                              <td>
+                                <% if (v.merenja && Object.keys(v.merenja).length > 0) { %>
+                                  <button type="button" class="btn btn-sm btn-outline-info" 
+                                          data-bs-toggle="popover" 
+                                          data-bs-placement="left"
+                                          data-bs-html="true"
+                                          data-measurements="<%= encodeURIComponent(JSON.stringify(v.merenja)) %>">
+                                    <i class="bi bi-rulers"></i>
+                                  </button>
+                                <% } else { %>
+                                  <span class="text-muted">—</span>
+                                <% } %>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        </tbody>
+                      </table>
+                    </div>
+                  <% } else { %>
+                    <p class="text-muted text-center py-3">Nema dodatih varijacija</p>
+                  <% } %>
+                <% } else if (section.itemType === 'faq') { %>
+                  <div class="faq-list">
+                    <% if (section.items && section.items.length > 0) { %>
+                      <% section.items.forEach(function(faq) { %>
+                        <div class="mb-3 pb-2 border-bottom">
+                          <h6 class="mb-1">
+                            <% if (faq.ikona) { %>
+                              <i class="bi <%= faq.ikona %> me-2"></i>
+                            <% } %>
+                            <%= faq.pitanje %>
+                          </h6>
+                          <p class="mb-0 text-muted"><%= faq.odgovor %></p>
+                        </div>
+                      <% }) %>
+                    <% } else { %>
+                      <p class="text-muted">Nema dodatih FAQ pitanja</p>
+                    <% } %>
+                  </div>
+                <% } else if (section.itemType === 'coupon-usage') { %>
+                  <% if (section.items && section.items.length > 0 && section.items[0].poruka) { %>
+                    <p class="text-muted text-center py-3"><%= section.items[0].poruka %></p>
+                  <% } else if (section.items && section.items.length > 0) { %>
+                    <div class="table-responsive">
+                      <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Korisnik ID</th>
+                            <th>Datum korišćenja</th>
+                            <th>Privremena porudžbina</th>
+                            <th>Porudžbina</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% section.items.forEach(function(item) { %>
+                            <tr>
+                              <td>
+                                <code class="text-primary" style="font-size: 0.85rem;">
+                                  <%= item.userId || 'Nepoznat' %>
+                                </code>
+                              </td>
+                              <td><%= item.iskorišćen || '-' %></td>
+                              <td>
+                                <% if (item.temporaryOrderId) { %>
+                                  <a href="/admin/privremene-porudzbine/detalji/<%= item.temporaryOrderId %>" class="text-decoration-none">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    #<%= item.temporaryOrderId.slice(-6) %>
+                                  </a>
+                                <% } else { %>
+                                  <span class="text-muted">-</span>
+                                <% } %>
+                              </td>
+                              <td>
+                                <% if (item.orderId) { %>
+                                  <a href="/admin/porudzbine/detalji/<%= item.orderId %>" class="text-decoration-none">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>
+                                    #<%= item.orderId.slice(-6) %>
+                                  </a>
+                                <% } else { %>
+                                  <span class="text-muted">-</span>
+                                <% } %>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        </tbody>
+                      </table>
+                    </div>
+                  <% } else { %>
+                    <p class="text-muted text-center py-3">Nema korišćenja</p>
+                  <% } %>
+                <% } else if (section.itemType === 'order-item') { %>
+                  <% if (section.items && section.items.length > 0) { %>
+                    <div class="table-responsive">
+                      <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Slika</th>
+                            <th>Naziv</th>
+                            <th>Veličina</th>
+                            <th>Boja</th>
+                            <th>Cena</th>
+                            <th>Količina</th>
+                            <th>Ukupno</th>
+                            <th>Affiliate kod</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% section.items.forEach(function(item) { %>
+                            <tr>
+                              <td>
+                                <% if (item.slika) { %>
+                                  <img src="/images/items/<%= item.slika %>" alt="<%= item.naziv %>" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                <% } else { %>
+                                  <span class="text-muted">—</span>
+                                <% } %>
+                              </td>
+                              <td><%= item.naziv %></td>
+                              <td><%= item.velicina || '-' %></td>
+                              <td><%= item.boja || '-' %></td>
+                              <td><%= item.cena %> RSD</td>
+                              <td><%= item.kolicina %></td>
+                              <td><%= item.ukupno %> RSD</td>
+                              <td><%= item.affiliateCode || '-' %></td>
+                            </tr>
+                          <% }) %>
+                        </tbody>
+                      </table>
+                    </div>
+                  <% } else { %>
+                    <p class="text-muted text-center py-3">Nema stavki</p>
+                  <% } %>
+                <% } else { %>
+                  <div class="list-group list-group-flush">
+                    <% section.items.forEach(function(item) { %>
+                      <div class="list-group-item px-0">
+                        <%- JSON.stringify(item) %>
+                      </div>
+                    <% }) %>
+                  </div>
+                <% } %>
+              <% } else if (section.type === 'custom') { %>
+                <%- include("components/" + section.content, { data: section.data }) %>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+    
+    <div class="col-lg-4">
+      <% if (typeof data.sidebar !== 'undefined') { %>
+        <% data.sidebar.forEach(function(card) { %>
+          <div class="card mb-4">
+            <div class="card-header">
+              <h6 class="card-title mb-0"><%= card.title %></h6>
+            </div>
+            <div class="card-body">
+              <% if (card.type === 'table') { %>
+                <dl class="row mb-0 small">
+                  <% card.rows.forEach(function(row) { %>
+                    <dt class="col-sm-5 text-muted"><%= row.label %></dt>
+                    <dd class="col-sm-7" style="word-break: break-all;"><%= row.value %></dd>
+                  <% }) %>
+                </dl>
+              <% } else if (card.type === 'custom') { %>
+                <%- include("components/" + card.content, { data: card.data }) %>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<script src="/js/details.js"></script>
+<%- include("../includes/footer") %>
