@@ -6,7 +6,7 @@ import * as tempOrderService from "./temporary.order.service.js";
 import * as orderService from "./order.service.js";
 import * as customerService from "./customer.service.js";
 import * as userService from "./user.service.js";
-import * as couponService from "./coupon.service.js"; // ✅ Samo ovo
+import * as couponService from "./coupon.service.js";
 import { buildPageSeo } from "../seo/index.js";
 import {
   validationError,
@@ -290,9 +290,9 @@ export async function getCheckoutData({ user, session }) {
   };
 }
 
-export async function applyCoupon(code, cartTotal, userId = null) {
+export async function applyCoupon(code, cartTotal, userId = null, guestEmail = null) {
   if (!code) validationError("code");
-  return couponService.applyCouponDiscount(code, cartTotal, userId);
+  return couponService.applyCouponDiscount(code, cartTotal, userId, guestEmail);
 }
 
 export async function createCheckoutTemporaryOrder(data, { user, session: expressSession }) {
@@ -422,9 +422,9 @@ export async function createCheckoutTemporaryOrder(data, { user, session: expres
   const couponCode = data.appliedCoupon || data.couponCode || null;
   if (couponCode && couponCode.trim()) {
     const code = couponCode.trim().toUpperCase();
-    await couponService.validateCouponForCheckout(code, subtotal, userId);
+    // ✅ Prosleđujemo guestEmail (uvek je dostupan preko buyerInfo.email)
+    await couponService.validateCouponForCheckout(code, subtotal, userId, buyerInfo.email);
 
-    // 🔥 Sada koristimo couponService, ne direktno repo
     const couponDoc = await couponService.getCouponRawByCode(code);
     if (!couponDoc) badRequest("Kupon nije pronađen");
 
@@ -463,11 +463,13 @@ export async function createCheckoutTemporaryOrder(data, { user, session: expres
       hasNewAddress: hasNewAddressFlag,
     }, { session: mongoSession });
 
-    if (couponObject && userId) {
+    // ✅ markCouponAsUsed sa userId i/ili guestEmail
+    if (couponObject) {
       await couponService.markCouponAsUsed(
         couponObject.couponId,
         result.id,
-        userId,
+        userId,                // može biti null za goste
+        buyerInfo.email,       // uvek postoji, koristi se kao guestEmail kada nema userId
         mongoSession
       );
     }

@@ -12,26 +12,68 @@ import {
 } from "../../../presenters/user/user.presenter.js";
 import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";
 
-export async function myProfile(req, res, next) {
+// ============================================================
+//  GLAVNI PROFIL – svi tabovi
+// ============================================================
+
+export async function profile(req, res, next) {
   try {
     const userId = req.session?.user?.id || req.session?.user?._id;
+    const { tab = 'profile' } = req.query;
     const user = await userService.getMyProfile(userId);
 
-    console.log("USER: " + JSON.stringify(user));
     const viewData = prepareProfileData(user);
-    console.log("PRESENTER: " + JSON.stringify(viewData));
-    viewData.messages = req.flash();
+    viewData.activeTab = tab;
+
+    if (tab === 'orders') {
+      const { page = 1 } = req.query;
+      const result = await orderService.getClientOrders(userId, {
+        page: parseInt(page, 10) || 1,
+      });
+      viewData.ordersData = prepareOrdersData(result);
+    } else if (tab === 'settings') {
+      viewData.settingsData = prepareSettingsData(user);
+    } else if (tab === 'wishlist') {
+      const { page = 1 } = req.query;
+      const result = await userService.getUserWishlist(userId, {
+        page: parseInt(page, 10) || 1,
+      });
+      viewData.wishlistData = {
+        items: result.data || [],
+        pagination: {
+          currentPage: result.page || 1,
+          totalPages: result.totalPages || 1,
+          total: result.total || 0,
+        },
+      };
+    } else if (tab === 'shop') {
+      const shop = await userService.getMyShop(userId);
+      viewData.shopData = prepareShopData(shop);
+    }
+
+    const titles = {
+      profile: 'Moj profil',
+      orders: 'Moje porudžbine',
+      wishlist: 'Lista želja',
+      shop: 'Moja prodavnica',
+      settings: 'Podešavanja naloga',
+    };
+    const pageTitle = titles[tab] || 'Moj profil';
 
     return res.render("user/profile", {
-      pageTitle: "Moj profil",
-      pageDescription: "Pregled i upravljanje vašim profilom",
+      pageTitle,
+      pageDescription: "Upravljanje vašim profilom",
       data: viewData,
     });
   } catch (error) {
-    logError(`[myProfile] Greška pri učitavanju profila`, error, { userId: req.session?.user?.id });
+    logError(`[profile] Greška pri učitavanju profila`, error, { userId: req.session?.user?.id });
     next(error);
   }
 }
+
+// ============================================================
+//  AKCIJE (POST / PUT / DELETE)
+// ============================================================
 
 export async function updateProfile(req, res, next) {
   try {
@@ -44,29 +86,29 @@ export async function updateProfile(req, res, next) {
       });
       const user = await userService.getMyProfile(userId);
       const viewData = prepareProfileDataWithErrors(user, req.validationErrors, req.body);
+      viewData.csrfToken = req.csrfToken ? req.csrfToken() : '';
+      viewData.activeTab = 'profile';
 
       return res.render("user/profile", {
         pageTitle: "Moj profil",
-        pageDescription: "Pregled i upravljanje vašim profilom",
+        pageDescription: "Upravljanje vašim profilom",
         data: viewData,
       });
     }
 
     await userService.updateUser(userId, req.body, userId);
 
-    logInfo(`[updateProfile] Profil korisnika #${userId} uspešno ažuriran`, {
-      userId,
-    });
+    logInfo(`[updateProfile] Profil korisnika #${userId} uspešno ažuriran`, { userId });
 
     req.flash("success", "Profil je uspešno ažuriran");
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   } catch (error) {
     logError(`[updateProfile] Greška pri ažuriranju profila`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
       body: req.body,
     });
     req.flash("error", error.message);
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   }
 }
 
@@ -78,24 +120,24 @@ export async function addTelephone(req, res, next) {
     if (!telephone) {
       logWarn(`[addTelephone] Telefon nije prosleđen za userId=${userId}`, { userId });
       req.flash("error", "Telefon je obavezan");
-      return res.redirect("/profil/moj-profil");
+      return res.redirect("/profil/moj-profil?tab=profile");
     }
 
     await userService.addTelephoneToUser(userId, telephone);
 
     logInfo(`[addTelephone] Telefon dodat korisniku #${userId}`, {
       userId,
-      telephone: telephone.substring(0, 4) + '***', // bez potpunog broja zbog sigurnosti
+      telephone: telephone.substring(0, 4) + '***',
     });
 
     req.flash("success", "Telefon je uspešno dodat");
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   } catch (error) {
     logError(`[addTelephone] Greška pri dodavanju telefona`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     req.flash("error", error.message);
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   }
 }
 
@@ -112,14 +154,14 @@ export async function removeTelephone(req, res, next) {
     });
 
     req.flash("success", "Telefon je uspešno uklonjen");
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   } catch (error) {
     logError(`[removeTelephone] Greška pri uklanjanju telefona`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
       telephoneId: req.params.telephoneId,
     });
     req.flash("error", error.message);
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   }
 }
 
@@ -134,7 +176,7 @@ export async function addAddress(req, res, next) {
         body: req.body,
       });
       req.flash("error", "Sva polja adrese su obavezna");
-      return res.redirect("/profil/moj-profil");
+      return res.redirect("/profil/moj-profil?tab=profile");
     }
 
     await userService.addAddressToUser(userId, { city, street, number, postalCode });
@@ -146,14 +188,14 @@ export async function addAddress(req, res, next) {
     });
 
     req.flash("success", "Adresa je uspešno dodata");
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   } catch (error) {
     logError(`[addAddress] Greška pri dodavanju adrese`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
       body: req.body,
     });
     req.flash("error", error.message);
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   }
 }
 
@@ -170,41 +212,20 @@ export async function removeAddress(req, res, next) {
     });
 
     req.flash("success", "Adresa je uspešno uklonjena");
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   } catch (error) {
     logError(`[removeAddress] Greška pri uklanjanju adrese`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
       addressId: req.params.addressId,
     });
     req.flash("error", error.message);
-    return res.redirect("/profil/moj-profil");
+    return res.redirect("/profil/moj-profil?tab=profile");
   }
 }
 
-export async function myOrders(req, res, next) {
-  try {
-    const userId = req.session?.user?.id || req.session?.user?._id;
-    const { page = 1 } = req.query;
-
-    const result = await orderService.getClientOrders(userId, {
-      page: parseInt(page, 10) || 1,
-    });
-
-    const viewData = prepareOrdersData(result);
-
-    return res.render("user/orders", {
-      pageTitle: "Moje porudžbine",
-      pageDescription: "Pregled svih vaših porudžbina",
-      data: viewData,
-    });
-  } catch (error) {
-    logError(`[myOrders] Greška pri učitavanju porudžbina korisnika`, error, {
-      userId: req.session?.user?.id || req.session?.user?._id,
-      page: req.query.page,
-    });
-    next(error);
-  }
-}
+// ============================================================
+//  PORUDŽBINE – detalji i otkazivanje
+// ============================================================
 
 export async function orderDetails(req, res, next) {
   try {
@@ -241,7 +262,7 @@ export async function cancelOrder(req, res, next) {
     });
 
     req.flash("success", "Porudžbina je uspešno otkazana");
-    return res.redirect("/profil/porudzbine");
+    return res.redirect("/profil/porudzbine?tab=orders");
   } catch (error) {
     logError(`[cancelOrder] Greška pri otkazivanju porudžbine`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
@@ -252,32 +273,19 @@ export async function cancelOrder(req, res, next) {
   }
 }
 
-export async function myShop(req, res, next) {
-  try {
-    const userId = req.session?.user?.id || req.session?.user?._id;
-    const shop = await userService.getMyShop(userId);
-    const viewData = prepareShopData(shop);
-
-    return res.render("user/shop", {
-      pageTitle: "Moja prodavnica",
-      pageDescription: "Upravljanje partnerskom prodavnicom",
-      data: viewData,
-    });
-  } catch (error) {
-    logError(`[myShop] Greška pri učitavanju partnerske prodavnice`, error, {
-      userId: req.session?.user?.id || req.session?.user?._id,
-    });
-    next(error);
-  }
-}
+// ============================================================
+//  PODEŠAVANJA – lozinka i deaktivacija
+// ============================================================
 
 export async function settings(req, res, next) {
   try {
     const userId = req.session?.user?.id || req.session?.user?._id;
     const user = await userService.getMyProfile(userId);
     const viewData = prepareSettingsData(user);
+    viewData.csrfToken = req.csrfToken ? req.csrfToken() : '';
+    viewData.activeTab = 'settings';
 
-    return res.render("user/settings", {
+    return res.render("user/profile", {
       pageTitle: "Podešavanja naloga",
       pageDescription: "Promena lozinke i podešavanja naloga",
       data: viewData,
@@ -293,6 +301,8 @@ export async function settings(req, res, next) {
 export async function changePassword(req, res, next) {
   try {
     const userId = req.session?.user?.id || req.session?.user?._id;
+    const user = await userService.getMyProfile(userId);
+
     const { oldPassword, newPassword, confirmPassword } = req.body;
 
     if (req.validationErrors) {
@@ -300,10 +310,11 @@ export async function changePassword(req, res, next) {
         validationErrors: req.validationErrors,
         userId,
       });
-      const user = await userService.getMyProfile(userId);
       const viewData = prepareSettingsDataWithErrors(user, req.validationErrors, req.body);
+      viewData.csrfToken = req.csrfToken ? req.csrfToken() : '';
+      viewData.activeTab = 'settings';
 
-      return res.render("user/settings", {
+      return res.render("user/profile", {
         pageTitle: "Podešavanja naloga",
         pageDescription: "Promena lozinke i podešavanja naloga",
         data: viewData,
@@ -312,30 +323,47 @@ export async function changePassword(req, res, next) {
 
     await authService.changePassword(userId, oldPassword, newPassword, confirmPassword);
 
-    logInfo(`[changePassword] Lozinka uspešno promenjena za korisnika #${userId}`, {
-      userId,
-    });
+    logInfo(`[changePassword] Lozinka uspešno promenjena za korisnika #${userId}`, { userId });
 
     req.flash("success", "Lozinka je uspešno promenjena");
-    return res.redirect("/profil/podesavanja");
+    return res.redirect("/profil/podesavanja?tab=settings");
   } catch (error) {
     logError(`[changePassword] Greška pri promeni lozinke`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/profil/podesavanja");
+
+    try {
+      const userId = req.session?.user?.id || req.session?.user?._id;
+      const user = await userService.getMyProfile(userId);
+      const viewData = prepareSettingsDataWithErrors(user, { general: error.message }, req.body);
+      viewData.csrfToken = req.csrfToken ? req.csrfToken() : '';
+      viewData.activeTab = 'settings';
+
+      return res.render("user/profile", {
+        pageTitle: "Podešavanja naloga",
+        pageDescription: "Promena lozinke i podešavanja naloga",
+        data: viewData,
+      });
+    } catch (renderError) {
+      logError(`[changePassword] Greška pri renderovanju strane sa greškom`, renderError, {
+        userId: req.session?.user?.id || req.session?.user?._id,
+      });
+      req.flash("error", error.message);
+      return res.redirect("/profil/podesavanja?tab=settings");
+    }
   }
 }
 
 export async function deactivateAccount(req, res, next) {
   try {
     const userId = req.session?.user?.id || req.session?.user?._id;
+    const user = await userService.getMyProfile(userId);
     const { password } = req.body;
 
     if (!password) {
       logWarn(`[deactivateAccount] Lozinka nije prosleđena za deaktivaciju userId=${userId}`, { userId });
       req.flash("error", "Lozinka je obavezna za deaktivaciju");
-      return res.redirect("/profil/podesavanja");
+      return res.redirect("/profil/podesavanja?tab=settings");
     }
 
     await authService.deactivateAccount(userId, password);
@@ -350,29 +378,77 @@ export async function deactivateAccount(req, res, next) {
     res.clearCookie("sid_tophelanke");
     res.clearCookie("tophelanke.sid");
 
-    req.flash("success", "Nalog je deaktiviran");
     return res.redirect("/");
   } catch (error) {
     logError(`[deactivateAccount] Greška pri deaktivaciji naloga`, error, {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/profil/podesavanja");
+
+    try {
+      const userId = req.session?.user?.id || req.session?.user?._id;
+      const user = await userService.getMyProfile(userId);
+      const viewData = prepareSettingsDataWithErrors(user, { general: error.message }, req.body);
+      viewData.csrfToken = req.csrfToken ? req.csrfToken() : '';
+      viewData.activeTab = 'settings';
+
+      return res.render("user/profile", {
+        pageTitle: "Podešavanja naloga",
+        pageDescription: "Promena lozinke i podešavanja naloga",
+        data: viewData,
+      });
+    } catch (renderError) {
+      logError(`[deactivateAccount] Greška pri renderovanju strane sa greškom`, renderError, {
+        userId: req.session?.user?.id || req.session?.user?._id,
+      });
+      req.flash("error", error.message);
+      return res.redirect("/profil/podesavanja?tab=settings");
+    }
   }
 }
 
+// ============================================================
+//  LISTA ŽELJA – uklanjanje
+// ============================================================
+
+export async function removeFromWishlist(req, res, next) {
+  try {
+    const userId = req.session?.user?.id || req.session?.user?._id;
+    const { itemId } = req.params;
+
+    await userService.removeFromWishlist(userId, itemId);
+
+    logInfo(`[removeFromWishlist] Artikal #${itemId} uklonjen iz liste želja korisnika #${userId}`, {
+      userId,
+      itemId,
+    });
+
+    req.flash("success", "Artikal je uklonjen iz liste želja.");
+    return res.redirect("/profil/zelje?tab=wishlist");
+  } catch (error) {
+    logError(`[removeFromWishlist] Greška pri uklanjanju iz liste želja`, error, {
+      userId: req.session?.user?.id || req.session?.user?._id,
+      itemId: req.params.itemId,
+    });
+    req.flash("error", error.message);
+    return res.redirect("/profil/zelje?tab=wishlist");
+  }
+}
+
+// ============================================================
+//  DEFAULT EXPORT
+// ============================================================
+
 export default {
-  myProfile,
+  profile,
   updateProfile,
   addTelephone,
   removeTelephone,
   addAddress,
   removeAddress,
-  myOrders,
   orderDetails,
   cancelOrder,
-  myShop,
   settings,
   changePassword,
   deactivateAccount,
+  removeFromWishlist,
 };

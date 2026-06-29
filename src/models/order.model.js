@@ -93,6 +93,7 @@ const OrderSchema = new Schema(
     confirmedAt: Date,
     shippedAt: Date,
     deliveredAt: Date,
+    completedAt: Date,
     cancelledAt: Date,
     returnedAt: Date,
     refundedAt: Date,

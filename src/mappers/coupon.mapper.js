@@ -40,7 +40,6 @@ function formatUsageLimit(coupon) {
   return `${coupon.usedCount}/${coupon.usageLimit}`;
 }
 
-// 🔥 IZMENA: podrška za null (neograničeno po korisniku)
 function getUsagePerUserLabel(coupon) {
   if (coupon.usagePerUser === null || coupon.usagePerUser === undefined) {
     return "Neograničeno";
@@ -100,6 +99,33 @@ export function mapCouponForAdminDetail(coupon) {
     return { id: user?.toString(), email: user?.toString() };
   });
 
+  // 🔥 Kombinujemo istoriju od registovanih i gostiju
+  const registeredHistory = (coupon.usedBy || []).map((u) => ({
+    userId: u.userId?.toString(),
+    email: null, // za razlikovanje
+    temporaryOrderId: u.temporaryOrderId?.toString(),
+    iskorišćen: u.usedAt ? formatDateTime(u.usedAt) : null,
+    orderId: u.orderId?.toString(),
+    tip: "Korisnik",
+  }));
+
+  const guestHistory = (coupon.usedByGuests || []).map((u) => ({
+    userId: null,
+    email: u.email,
+    temporaryOrderId: u.temporaryOrderId?.toString(),
+    iskorišćen: u.usedAt ? formatDateTime(u.usedAt) : null,
+    orderId: u.orderId?.toString(),
+    tip: "Gost",
+  }));
+
+  // Sortiraj po datumu korišćenja (od najnovijeg)
+  const combinedHistory = [...registeredHistory, ...guestHistory]
+    .filter((item) => item.iskorišćen !== null)
+    .sort((a, b) => new Date(b.iskorišćen) - new Date(a.iskorišćen));
+
+  // Broj korišćenja od strane gostiju (za prikaz u tabeli)
+  const guestCount = guestHistory.length;
+
   return {
     id: coupon._id.toString(),
     osnovno: {
@@ -114,9 +140,9 @@ export function mapCouponForAdminDetail(coupon) {
       limit: coupon.usageLimit === null ? "Neograničeno" : coupon.usageLimit,
       korišćeno: coupon.usedCount,
       preostalo: getRemainingUses(coupon),
-      // 🔥 IZMENA: prikaz za usagePerUser
       poKorisniku: coupon.usagePerUser === null ? "Neograničeno" : `${coupon.usagePerUser} puta`,
       minIznosKorpe: coupon.minCartAmount,
+      gostiju: guestCount, // ✅ dodat prikaz broja gostiju
     },
     važenje: {
       važiOd: coupon.validFrom ? formatDateTime(coupon.validFrom) : null,
@@ -129,12 +155,7 @@ export function mapCouponForAdminDetail(coupon) {
       allowedUsersCount: allowedUsersDetails.length,
       isGlobal: allowedUsersDetails.length === 0,
     },
-    istorija: (coupon.usedBy || []).map((u) => ({
-      userId: u.userId?.toString(),
-      temporaryOrderId: u.temporaryOrderId?.toString(),
-      iskorišćen: u.usedAt ? formatDateTime(u.usedAt) : null,
-      orderId: u.orderId?.toString(),
-    })),
+    istorija: combinedHistory, // ✅ spajamo i sortiramo
     vreme: {
       kreirano: formatDateTime(coupon.createdAt),
       azurirano: formatDateTime(coupon.updatedAt),
@@ -152,7 +173,6 @@ export function mapCouponForEdit(coupon) {
     discountType: coupon.discountType,
     discountValue: coupon.discountValue,
     usageLimit: coupon.usageLimit,
-    // 🔥 IZMENA: čuvamo null kao null
     usagePerUser: coupon.usagePerUser,
     minCartAmount: coupon.minCartAmount,
     validFrom: coupon.validFrom,
@@ -172,7 +192,6 @@ export function mapCouponForCheckout(coupon) {
     minIznosKorpe: coupon.minCartAmount,
     validan: isCurrentlyValid(coupon),
     preostalo: getRemainingUses(coupon),
-    // 🔥 IZMENA: prikaz za usagePerUser
     poKorisniku: coupon.usagePerUser === null ? "Neograničeno" : `${coupon.usagePerUser} puta`,
   };
 }

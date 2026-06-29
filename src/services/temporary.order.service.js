@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import eventEmitter from "../events/event.emitter.js";
 import * as tempOrderRepo from "../repositories/temporary.order.repository.js";
 import * as itemService from "./item.service.js";
+import * as couponService from "./coupon.service.js"; // ✅ DODATO
 import { encrypt, generateRandomToken } from "./crypto.service.js";
 import { encryptTelephone, encryptAddress } from "../utils/encryption.util.js";
 import {
@@ -215,15 +216,36 @@ export async function deleteExpiredTemporaryOrders() {
   let deletedCount = 0;
   for (const order of all) {
     if (new Date(order.tokenExpiration) < now) {
+      const session = await mongoose.startSession();
       try {
-        await itemService.restoreStock(order.items);
+        session.startTransaction();
+
+        // Restore stock
+        await itemService.restoreStock(order.items, { session });
+
+        // ✅ Release coupon if present – podržava i goste
+        if (order.coupon?.couponId && order.buyerId) {
+          const isUser = order.buyerModel === "User";
+          await couponService.releaseCoupon(
+            order.coupon.couponId,
+            isUser ? order.buyerId : null,
+            isUser ? null : order.buyerInfo.email,
+            order._id,
+            session
+          );
+        }
+
+        await tempOrderRepo.deleteTemporaryOrderById(order._id, session);
+        await session.commitTransaction();
+        deletedCount++;
       } catch (error) {
-        logError("Failed to restore stock for expired order", error, {
+        await session.abortTransaction();
+        logError("Failed to cleanup expired order", error, {
           orderId: order._id,
         });
+      } finally {
+        session.endSession();
       }
-      await tempOrderRepo.deleteTemporaryOrderById(order._id);
-      deletedCount++;
     }
   }
 

@@ -6,7 +6,7 @@
   <%- include("../includes/flash-messages") %>
 
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Moj profil</h1>
+    <h1 class="h3 mb-0"><%= pageTitle %></h1>
   </div>
 
   <div class="row g-4">
@@ -16,36 +16,38 @@
         <div class="card-body text-center">
           <div class="mb-3">
             <img
-              src="<%= data.user?.osnovno?.avatar || '/images/default-avatar.png' %>"
+              src="<%= data.user?.avatar || data.user?.osnovno?.avatar || '/images/default-avatar.png' %>"
               alt="Avatar"
-              class="rounded-circle img-fluid"
-              style="width: 120px; height: 120px; object-fit: cover;"
+              class="rounded-circle img-fluid avatar-profile"
             />
           </div>
-          <h5 class="mb-0"><%= (data.user?.osnovno?.ime || '') + ' ' + (data.user?.osnovno?.prezime || '') || 'Korisnik' %></h5>
-          <small class="text-muted"><%= data.user?.osnovno?.email || '' %></small>
+          <h5 class="mb-0"><%= data.user?.fullName || (data.user?.osnovno?.ime || '') + ' ' + (data.user?.osnovno?.prezime || '') || 'Korisnik' %></h5>
+          <small class="text-muted"><%= data.user?.email || data.user?.osnovno?.email || '' %></small>
           <hr>
           <div class="list-group list-group-flush text-start">
-            <a href="/profil/moj-profil" class="list-group-item list-group-item-action active">
+            <a href="/profil/moj-profil?tab=profile" class="list-group-item list-group-item-action <%= data.activeTab === 'profile' ? 'active' : '' %>">
               <i class="bi bi-person"></i> Moj profil
             </a>
-            <a href="/profil/porudzbine" class="list-group-item list-group-item-action">
+            <a href="/profil/porudzbine?tab=orders" class="list-group-item list-group-item-action <%= data.activeTab === 'orders' ? 'active' : '' %>">
               <i class="bi bi-box"></i> Moje porudžbine
             </a>
+            <a href="/profil/zelje?tab=wishlist" class="list-group-item list-group-item-action <%= data.activeTab === 'wishlist' ? 'active' : '' %>">
+              <i class="bi bi-heart"></i> Lista želja
+            </a>
             <% if (data.partner) { %>
-            <a href="/profil/moja-prodavnica" class="list-group-item list-group-item-action">
+            <a href="/profil/moja-prodavnica?tab=shop" class="list-group-item list-group-item-action <%= data.activeTab === 'shop' ? 'active' : '' %>">
               <i class="bi bi-shop"></i> Moja prodavnica
             </a>
             <% } %>
-            <a href="/profil/podesavanja" class="list-group-item list-group-item-action">
+            <a href="/profil/podesavanja?tab=settings" class="list-group-item list-group-item-action <%= data.activeTab === 'settings' ? 'active' : '' %>">
               <i class="bi bi-gear"></i> Podešavanja
             </a>
           </div>
         </div>
       </div>
 
-      <!-- Partner info if exists -->
-      <% if (data.partner) { %>
+      <!-- Partner info if exists (samo na profile tab-u) -->
+      <% if (data.partner && data.activeTab === 'profile') { %>
       <div class="card border-0 shadow-sm mt-3">
         <div class="card-body">
           <h6 class="mb-2"><i class="bi bi-star text-warning"></i> Partner status</h6>
@@ -64,204 +66,23 @@
 
     <!-- Main content -->
     <div class="col-lg-9">
-      <!-- Osnovni podaci -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white">
-          <h5 class="mb-0">Osnovni podaci</h5>
-        </div>
-        <div class="card-body">
-          <form action="/profil/moj-profil" method="POST">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="firstName" class="form-label">Ime</label>
-                <input
-                  type="text"
-                  class="form-control <%= data.errors?.firstName ? 'is-invalid' : '' %>"
-                  id="firstName"
-                  name="firstName"
-                  value="<%= data.formData?.firstName || data.user?.osnovno?.ime || '' %>"
-                  required
-                />
-                <% if (data.errors?.firstName) { %>
-                  <div class="invalid-feedback"><%= data.errors.firstName %></div>
-                <% } %>
-              </div>
-              <div class="col-md-6">
-                <label for="lastName" class="form-label">Prezime</label>
-                <input
-                  type="text"
-                  class="form-control <%= data.errors?.lastName ? 'is-invalid' : '' %>"
-                  id="lastName"
-                  name="lastName"
-                  value="<%= data.formData?.lastName || data.user?.osnovno?.prezime || '' %>"
-                  required
-                />
-                <% if (data.errors?.lastName) { %>
-                  <div class="invalid-feedback"><%= data.errors.lastName %></div>
-                <% } %>
-              </div>
-              <div class="col-12">
-                <label for="email" class="form-label">Email</label>
-                <input
-                  type="email"
-                  class="form-control <%= data.errors?.email ? 'is-invalid' : '' %>"
-                  id="email"
-                  name="email"
-                  value="<%= data.formData?.email || data.user?.osnovno?.email || '' %>"
-                  required
-                />
-                <% if (data.errors?.email) { %>
-                  <div class="invalid-feedback"><%= data.errors.email %></div>
-                <% } %>
-              </div>
-              <div class="col-12">
-                <button type="submit" class="btn btn-primary">
-                  <i class="bi bi-save"></i> Sačuvaj promene
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Telefoni -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="bi bi-telephone"></i> Telefoni</h5>
-          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addTelephoneForm">
-            <i class="bi bi-plus"></i> Dodaj
-          </button>
-        </div>
-        <div class="card-body">
-          <div class="collapse mb-3" id="addTelephoneForm">
-            <form action="/profil/telefon" method="POST" class="row g-2">
-              <div class="col-8">
-                <input type="text" class="form-control" name="telephone" placeholder="Unesite broj telefona" required />
-              </div>
-              <div class="col-4">
-                <button type="submit" class="btn btn-success w-100">
-                  <i class="bi bi-plus"></i> Dodaj
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <% if (data.telephones && data.telephones.length > 0) { %>
-            <div class="list-group">
-              <% data.telephones.forEach(tel => { %>
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                  <span><i class="bi bi-phone"></i> <%= tel.value || tel.telephone || tel.phone %></span>
-                  <button
-                    class="btn btn-sm btn-outline-danger delete-btn"
-                    data-action="/profil/telefon/<%= tel.id || tel._id %>"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              <% }) %>
-            </div>
-          <% } else { %>
-            <p class="text-muted mb-0">Nema dodatih telefona.</p>
-          <% } %>
-        </div>
-      </div>
-
-      <!-- Adrese -->
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Adrese</h5>
-          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addAddressForm">
-            <i class="bi bi-plus"></i> Dodaj
-          </button>
-        </div>
-        <div class="card-body">
-          <div class="collapse mb-3" id="addAddressForm">
-            <form action="/profil/adresa" method="POST" class="row g-2">
-              <div class="col-md-3">
-                <input type="text" class="form-control" name="street" placeholder="Ulica" required />
-              </div>
-              <div class="col-md-2">
-                <input type="text" class="form-control" name="number" placeholder="Broj" required />
-              </div>
-              <div class="col-md-3">
-                <input type="text" class="form-control" name="city" placeholder="Grad" required />
-              </div>
-              <div class="col-md-2">
-                <input type="text" class="form-control" name="postalCode" placeholder="Poštanski broj" required />
-              </div>
-              <div class="col-md-2">
-                <button type="submit" class="btn btn-success w-100">
-                  <i class="bi bi-plus"></i> Dodaj
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <% if (data.addresses && data.addresses.length > 0) { %>
-            <div class="list-group">
-              <% data.addresses.forEach(addr => { %>
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong><%= addr.city || '' %></strong><br>
-                    <small><%= addr.street || '' %> <%= addr.number || '' %>, <%= addr.postalCode || '' %></small>
-                  </div>
-                  <button
-                    class="btn btn-sm btn-outline-danger delete-btn"
-                    data-action="/profil/adresa/<%= addr.id || addr._id %>"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              <% }) %>
-            </div>
-          <% } else { %>
-            <p class="text-muted mb-0">Nema dodatih adresa.</p>
-          <% } %>
-        </div>
-      </div>
-
-      <!-- Recent orders -->
-      <% if (data.orders && data.orders.length > 0) { %>
-      <div class="card border-0 shadow-sm mt-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="bi bi-clock-history"></i> Poslednje porudžbine</h5>
-          <a href="/profil/porudzbine" class="btn btn-sm btn-link">Pogledaj sve</a>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-sm">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Datum</th>
-                  <th>Status</th>
-                  <th>Ukupno</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% data.orders.slice(0, 3).forEach(order => { %>
-                <tr>
-                  <td><a href="/profil/porudzbine/<%= order.id %>">#<%= order.id?.slice(-6) %></a></td>
-                  <td><%= order.kreirana || 'Nepoznato' %></td>
-                  <td>
-                    <span class="badge bg-<%= order.statusBadge %>">
-                      <%= order.statusLabel %>
-                    </span>
-                  </td>
-                  <td><%= order.ukupno || '0 RSD' %></td>
-                </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <!-- Uključi odgovarajući tab na osnovu activeTab -->
+      <% if (data.activeTab === 'profile') { %>
+        <%- include("_profile-tab") %>
+      <% } else if (data.activeTab === 'orders') { %>
+        <%- include("_orders-tab") %>
+      <% } else if (data.activeTab === 'wishlist') { %>
+        <%- include("_wishlist-tab") %>
+      <% } else if (data.activeTab === 'shop') { %>
+        <%- include("_shop-tab") %>
+      <% } else if (data.activeTab === 'settings') { %>
+        <%- include("_settings-tab") %>
       <% } %>
     </div>
   </div>
 </main>
 
-<!-- Delete confirmation modal -->
+<!-- Delete confirmation modal (za telefone/adrese) -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content">
@@ -274,8 +95,50 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
-        <form id="deleteForm" method="POST" style="display:inline;">
+        <form id="deleteForm" method="POST">
+          <input type="hidden" name="_method" value="DELETE">
+          <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
           <button type="submit" class="btn btn-danger">Obriši</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Deactivate confirmation modal (za deaktivaciju naloga) -->
+<div class="modal fade" id="deactivateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-danger">Potvrda deaktivacije</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zatvori"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">
+          Da li ste sigurni da želite da <strong>deaktivirate</strong> svoj nalog?<br>
+          Ova radnja je <strong>trajna</strong> i ne može se poništiti.
+        </p>
+        <p class="text-muted small mt-2">
+          Morate uneti lozinku za potvrdu.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+        <form id="deactivateForm" action="/profil/podesavanja/deaktiviraj" method="POST">
+          <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+          <div class="mb-2">
+            <input
+              type="password"
+              class="form-control form-control-sm"
+              id="modalPassword"
+              name="password"
+              placeholder="Unesite lozinku"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-exclamation-triangle"></i> Deaktiviraj
+          </button>
         </form>
       </div>
     </div>
@@ -284,4 +147,5 @@
 
 <script src="/js/profile.js"></script>
 <script src="/js/details.js"></script>
+<script src="/js/settings.js"></script>
 <%- include("../includes/footer") %>

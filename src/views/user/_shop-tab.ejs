@@ -1,0 +1,31 @@
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0">Moja prodavnica</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <dl class="row">
+          <dt class="col-sm-6 text-muted">Status</dt>
+          <dd class="col-sm-6">
+            <span class="badge bg-<%= data.shop.active ? 'success' : 'secondary' %>">
+              <%= data.shop.active ? 'Aktivna' : 'Neaktivna' %>
+            </span>
+          </dd>
+          <dt class="col-sm-6 text-muted">Novčanik</dt>
+          <dd class="col-sm-6"><%= data.wallet %> RSD</dd>
+        </dl>
+      </div>
+      <div class="col-md-6">
+        <dl class="row">
+          <dt class="col-sm-6 text-muted">Nivo</dt>
+          <dd class="col-sm-6"><%= data.rank.level || 0 %></dd>
+          <dt class="col-sm-6 text-muted">Poeni</dt>
+          <dd class="col-sm-6"><%= data.rank.points || 0 %></dd>
+          <dt class="col-sm-6 text-muted">Popust</dt>
+          <dd class="col-sm-6"><%= data.rank.discount || 0 %>%</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>

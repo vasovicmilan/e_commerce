@@ -84,7 +84,7 @@ export function mapUserForAdminDetail(user) {
     partner: user.partner?.isPartner
       ? {
           isPartner: true,
-          slug: user.partner.slug || null, // DODATO
+          slug: user.partner.slug || null,
           shopStatus: user.partner.shop?.status || false,
           shopLogo: user.partner.shop?.logo || null,
           shopColors: user.partner.shop?.colors || [],
@@ -125,7 +125,7 @@ export function mapUserForEdit(user) {
     potvrđen: user.confirmed,
     prihvaćeno: user.acceptance,
     partner: user.partner?.isPartner || false,
-    slug: user.partner?.slug || null, // DODATO
+    slug: user.partner?.slug || null,
   };
 }
 
@@ -148,8 +148,8 @@ export function mapMyProfile(user) {
     },
     porudzbine: user.orders?.map((o) => ({
       id: o._id?.toString(),
-      status: o.status,
-      ukupno: o.total,
+      status: o.status, // raw status string
+      ukupno: o.totalPrice || 0, // ✅ popravljeno: totalPrice umesto total
       kreirana: o.createdAt ? formatDateTime(o.createdAt) : null,
     })) || [],
     partner: user.partner?.isPartner

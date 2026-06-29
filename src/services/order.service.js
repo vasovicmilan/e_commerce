@@ -136,8 +136,9 @@ export async function confirmOrder(token, orderId, options = {}) {
       session
     );
 
+    let migrationResult = null;
     if (tempOrder.createNewAccount && tempOrder.buyerModel === "Customer") {
-      const migrationResult = await migrateOrderFromCustomerToUser(
+      migrationResult = await migrateOrderFromCustomerToUser(
         tempOrder.buyerId,
         newOrderId,
         session
@@ -148,11 +149,15 @@ export async function confirmOrder(token, orderId, options = {}) {
       }
     }
 
+    // ✅ Update coupon usage – prosledi userId ili guestEmail
     if (tempOrder.coupon?.couponId) {
-      await couponService.markCouponAsUsed(
+      const isUser = tempOrder.buyerModel === "User";
+      await couponService.updateCouponUsedByOrder(
         tempOrder.coupon.couponId,
+        isUser ? tempOrder.buyerId : null,
+        isUser ? null : tempOrder.buyerInfo.email,
+        tempOrderId,
         newOrderId,
-        tempOrder.buyerId,
         session
       );
     }
@@ -160,6 +165,17 @@ export async function confirmOrder(token, orderId, options = {}) {
     await tempOrderService.deleteTemporaryOrder(tempOrderId, { session });
 
     if (ownsSession) await session.commitTransaction();
+
+    if (migrationResult?.migrated) {
+      eventEmitter.emit("user:migrated", {
+        email: migrationResult.email,
+        firstName: migrationResult.firstName,
+        lastName: migrationResult.lastName,
+        userId: migrationResult.userId,
+        confirmToken: migrationResult.confirmToken,
+        resetToken: migrationResult.resetToken,
+      });
+    }
 
     eventEmitter.emit("order:confirmed", {
       order: orderObject,
@@ -218,7 +234,6 @@ async function ensureClientData(buyerModel, buyerId, { telephone, address, order
 }
 
 async function migrateOrderFromCustomerToUser(customerId, orderId, session) {
-  // Fetch raw customer data within the transaction – includes newly added telephone/address/order
   const customerData = await customerService.getCustomerRawById(customerId, { session });
 
   const result = await userService.migrateCustomerToUser({
@@ -230,7 +245,6 @@ async function migrateOrderFromCustomerToUser(customerId, orderId, session) {
 
   if (!result.userId) return null;
 
-  // Reassign all orders from this customer to the new user
   await orderRepo.updateManyOrders(
     {
       buyerId: customerId,
@@ -243,10 +257,9 @@ async function migrateOrderFromCustomerToUser(customerId, orderId, session) {
     session
   );
 
-  // ✅ Delete the original customer after all data is transferred
   await customerService.deleteCustomerAfterMigration(customerId, session);
 
-  return { userId: result.userId };
+  return result;
 }
 
 export async function updateOrderStatusByAdmin(orderId, newStatus) {

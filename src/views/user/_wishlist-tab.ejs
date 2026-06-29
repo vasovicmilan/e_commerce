@@ -1,0 +1,39 @@
+<% const wishlistData = data.wishlistData || { items: [], pagination: {} }; %>
+<% if (wishlistData.items && wishlistData.items.length > 0) { %>
+  <div class="row row-cols-2 row-cols-md-4 g-4">
+    <% wishlistData.items.forEach(item => { %>
+      <div class="col">
+        <div class="card h-100">
+          <img
+            src="<%= item.slika || '/images/items/placeholder.jpg' %>"
+            class="card-img-top"
+            alt="<%= item.naziv %>"
+            style="height: 200px; object-fit: cover;"
+          />
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title"><%= item.naziv %></h5>
+            <p class="card-text"><%= parseInt(item.cena || 0).toLocaleString('sr-RS') %> RSD</p>
+            <div class="mt-auto">
+              <a href="/prodavnica/artikal/<%= item.slug || item.id %>" class="btn btn-sm btn-outline-primary w-100 mb-2">
+                <i class="bi bi-eye"></i> Pogledaj
+              </a>
+              <form action="/profil/zelje/ukloni/<%= item.id %>" method="POST">
+                <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-sm btn-danger w-100">
+                  <i class="bi bi-heart-fill"></i> Ukloni
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  <%- include("../includes/pagination", { pagination: wishlistData.pagination }) %>
+<% } else { %>
+  <div class="text-center py-5">
+    <i class="bi bi-heart fs-1 text-muted"></i>
+    <p class="text-muted mt-3">Nemate omiljenih proizvoda.</p>
+    <a href="/prodavnica" class="btn btn-primary">Pregledajte proizvode</a>
+  </div>
+<% } %>

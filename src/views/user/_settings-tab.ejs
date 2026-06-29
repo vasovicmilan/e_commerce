@@ -1,0 +1,106 @@
+<!-- ✅ Flash poruke se prikazuju preko <%- include("../includes/flash-messages") %> u profile.ejs -->
+<!-- ✅ OVDJE PRIKAZUJEMO SAMO VALIDACIONE GREŠKE (ne idu kroz flash) -->
+
+<!-- OPŠTA GREŠKA (ne-validaciona) -->
+<% if (data.errors?.general) { %>
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i> <%= data.errors.general %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<% } %>
+
+<!-- VALIDACIONE GREŠKE (polje po polje) -->
+<% const fieldErrors = Object.keys(data.errors || {}).filter(k => k !== 'general'); %>
+<% if (fieldErrors.length > 0) { %>
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-x-circle me-2"></i>
+    <strong>Molimo ispravite sledeće greške:</strong>
+    <ul class="mb-0 mt-1">
+      <% fieldErrors.forEach(key => { %>
+        <li><%= data.errors[key] %></li>
+      <% }) %>
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <!-- Promena lozinke -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Promena lozinke</h5>
+      </div>
+      <div class="card-body">
+        <form action="/profil/podesavanja/lozinka" method="POST">
+          <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+          <div class="mb-3">
+            <label for="oldPassword" class="form-label">Trenutna lozinka</label>
+            <input
+              type="password"
+              class="form-control <%= data.errors?.oldPassword ? 'is-invalid' : '' %>"
+              id="oldPassword"
+              name="oldPassword"
+              value="<%= data.formData?.oldPassword || '' %>"
+              required
+            />
+            <% if (data.errors?.oldPassword) { %>
+              <div class="invalid-feedback"><%= data.errors.oldPassword %></div>
+            <% } %>
+          </div>
+          <div class="mb-3">
+            <label for="newPassword" class="form-label">Nova lozinka</label>
+            <input
+              type="password"
+              class="form-control <%= data.errors?.newPassword ? 'is-invalid' : '' %>"
+              id="newPassword"
+              name="newPassword"
+              value="<%= data.formData?.newPassword || '' %>"
+              required
+              minlength="8"
+            />
+            <% if (data.errors?.newPassword) { %>
+              <div class="invalid-feedback"><%= data.errors.newPassword %></div>
+            <% } %>
+          </div>
+          <div class="mb-3">
+            <label for="confirmPassword" class="form-label">Potvrdi novu lozinku</label>
+            <input
+              type="password"
+              class="form-control <%= data.errors?.confirmPassword ? 'is-invalid' : '' %>"
+              id="confirmPassword"
+              name="confirmPassword"
+              value="<%= data.formData?.confirmPassword || '' %>"
+              required
+            />
+            <% if (data.errors?.confirmPassword) { %>
+              <div class="invalid-feedback"><%= data.errors.confirmPassword %></div>
+            <% } %>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-key"></i> Promeni lozinku
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <!-- Deaktivacija naloga -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="mb-0 text-danger">Deaktivacija naloga</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small">
+          Deaktivacijom naloga, vaš profil će biti onemogućen i nećete moći da se prijavljujete.
+          Sve vaše porudžbine i podaci će ostati sačuvani.
+        </p>
+        <!-- Dugme otvara modal (definisan u profile.ejs) -->
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deactivateModal">
+          <i class="bi bi-exclamation-triangle"></i> Deaktiviraj nalog
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

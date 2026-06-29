@@ -3,10 +3,10 @@ export const ORDER_STATUS_TRANSITIONS = {
   confirmed: ["processing", "cancelled"],
   processing: ["shipped", "cancelled"],
   shipped: ["delivered", "returned"],
-  delivered: ["returned", "completed"],     // ✅ može da pređe u completed ili returned
-  completed: [],                            // ✅ finalno – nema daljih tranzicija
+  delivered: ["returned", "completed"],
+  completed: [],
   cancelled: [],
-  returned: ["refunded"],                   // povraćaj može da se refundira
+  returned: ["refunded"],
   refunded: [],
   failed: [],
 };
@@ -15,10 +15,8 @@ export const EDITABLE_CONTACT_STATUSES = ["pending", "confirmed", "processing"];
 
 export const CANCELLABLE_STATUSES = ["pending", "confirmed", "processing"];
 
-// Aktivni statusi – još uvek mogu da se menjaju (nisu finalni)
 export const ACTIVE_STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered"];
 
-// Finalni statusi – proces je završen, više nema promena
 export const FINAL_STATUSES = ["completed", "cancelled", "returned", "refunded", "failed"];
 
 export function canTransition(from, to) {
@@ -36,7 +34,7 @@ export function getStatusTimestampField(status) {
     confirmed: "confirmedAt",
     shipped: "shippedAt",
     delivered: "deliveredAt",
-    completed: "completedAt",     // ✅ dodato
+    completed: "completedAt",
     cancelled: "cancelledAt",
     returned: "returnedAt",
     refunded: "refundedAt",

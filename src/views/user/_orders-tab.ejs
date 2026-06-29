@@ -1,0 +1,42 @@
+<% const ordersData = data.ordersData || { orders: [], pagination: {} }; %>
+<% if (ordersData.orders && ordersData.orders.length > 0) { %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Datum</th>
+          <th>Status</th>
+          <th>Ukupno</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% ordersData.orders.forEach(order => { %>
+          <tr>
+            <td>#<%= order.id?.slice(-6) %></td>
+            <td><%= order.kreirano || 'Nepoznato' %></td> <!-- ✅ kreirano umesto kreiran -->
+            <td>
+              <span class="badge bg-<%= order.statusBadge || 'secondary' %>">
+                <%= order.statusLabel || order.status || 'Nepoznat' %>
+              </span>
+            </td>
+            <td><%= order.ukupno || '0 RSD' %></td>
+            <td>
+              <a href="/profil/porudzbine/<%= order.id %>" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i> Detalji
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <%- include("../includes/pagination", { pagination: ordersData.pagination }) %>
+<% } else { %>
+  <div class="text-center py-5">
+    <i class="bi bi-box-seam fs-1 text-muted"></i>
+    <p class="text-muted mt-3">Nemate još nijednu porudžbinu.</p>
+    <a href="/prodavnica" class="btn btn-primary">Počnite sa kupovinom</a>
+  </div>
+<% } %>

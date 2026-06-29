@@ -1,0 +1,203 @@
+<!-- Osnovni podaci -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0">Osnovni podaci</h5>
+  </div>
+  <div class="card-body">
+    <form action="/profil/moj-profil" method="POST">
+      <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="firstName" class="form-label">Ime</label>
+          <input
+            type="text"
+            class="form-control <%= data.errors?.firstName ? 'is-invalid' : '' %>"
+            id="firstName"
+            name="firstName"
+            value="<%= data.formData?.firstName || data.user?.firstName || data.user?.osnovno?.ime || '' %>"
+            required
+          />
+          <% if (data.errors?.firstName) { %>
+            <div class="invalid-feedback"><%= data.errors.firstName %></div>
+          <% } %>
+        </div>
+        <div class="col-md-6">
+          <label for="lastName" class="form-label">Prezime</label>
+          <input
+            type="text"
+            class="form-control <%= data.errors?.lastName ? 'is-invalid' : '' %>"
+            id="lastName"
+            name="lastName"
+            value="<%= data.formData?.lastName || data.user?.lastName || data.user?.osnovno?.prezime || '' %>"
+            required
+          />
+          <% if (data.errors?.lastName) { %>
+            <div class="invalid-feedback"><%= data.errors.lastName %></div>
+          <% } %>
+        </div>
+        <div class="col-12">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            class="form-control <%= data.errors?.email ? 'is-invalid' : '' %>"
+            id="email"
+            name="email"
+            value="<%= data.formData?.email || data.user?.email || data.user?.osnovno?.email || '' %>"
+            required
+          />
+          <% if (data.errors?.email) { %>
+            <div class="invalid-feedback"><%= data.errors.email %></div>
+          <% } %>
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Sačuvaj promene
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Telefoni -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-telephone"></i> Telefoni</h5>
+    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addTelephoneForm">
+      <i class="bi bi-plus"></i> Dodaj
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="collapse mb-3" id="addTelephoneForm">
+      <form action="/profil/moj-profil/telefon" method="POST" class="row g-2">
+        <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+        <div class="col-8">
+          <input type="text" class="form-control" name="telephone" placeholder="Unesite broj telefona" required />
+        </div>
+        <div class="col-4">
+          <button type="submit" class="btn btn-success w-100">
+            <i class="bi bi-plus"></i> Dodaj
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <% const telephones = data.user?.kontakt?.telefoni || data.telephones || []; %>
+    <% if (telephones && telephones.length > 0) { %>
+      <div class="list-group">
+        <% telephones.forEach(tel => { %>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-phone"></i> <%= tel.value || tel.telephone || tel.phone %></span>
+            <button
+              class="btn btn-sm btn-outline-danger delete-btn"
+              data-action="/profil/moj-profil/telefon/<%= tel.id || tel._id %>"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteModal"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="text-muted mb-0">Nema dodatih telefona.</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- Adrese -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Adrese</h5>
+    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addAddressForm">
+      <i class="bi bi-plus"></i> Dodaj
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="collapse mb-3" id="addAddressForm">
+      <form action="/profil/moj-profil/adresa" method="POST" class="row g-2">
+        <input type="hidden" name="CSRFToken" value="<%= csrfToken %>">
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="street" placeholder="Ulica" required />
+        </div>
+        <div class="col-md-2">
+          <input type="text" class="form-control" name="number" placeholder="Broj" required />
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="city" placeholder="Grad" required />
+        </div>
+        <div class="col-md-2">
+          <input type="text" class="form-control" name="postalCode" placeholder="Poštanski broj" required />
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-success w-100">
+            <i class="bi bi-plus"></i> Dodaj
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <% const addresses = data.user?.kontakt?.adrese || data.addresses || []; %>
+    <% if (addresses && addresses.length > 0) { %>
+      <div class="list-group">
+        <% addresses.forEach(addr => { %>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong><%= addr.city || '' %></strong><br>
+              <small><%= addr.street || '' %> <%= addr.number || '' %>, <%= addr.postalCode || '' %></small>
+            </div>
+            <button
+              class="btn btn-sm btn-outline-danger delete-btn"
+              data-action="/profil/moj-profil/adresa/<%= addr.id || addr._id %>"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteModal"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="text-muted mb-0">Nema dodatih adresa.</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- ✅ DODATO: Poslednje porudžbine -->
+<% const recentOrders = data.porudzbine || []; %>
+<% if (recentOrders && recentOrders.length > 0) { %>
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Poslednje porudžbine</h5>
+    <a href="/profil/porudzbine?tab=orders" class="btn btn-sm btn-link">Pogledaj sve</a>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Datum</th>
+            <th>Status</th>
+            <th>Ukupno</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recentOrders.slice(0, 3).forEach(order => { %>
+          <tr>
+            <td><a href="/profil/porudzbine/<%= order.id %>">#<%= order.id?.slice(-6) %></a></td>
+            <td><%= order.kreirana || 'Nepoznato' %></td>
+            <td>
+              <span class="badge bg-<%= order.statusBadge || 'secondary' %>">
+                <%= order.statusLabel || order.status || 'Nepoznat' %>
+              </span>
+            </td>
+            <td><%= order.ukupno || '0 RSD' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<% } %>

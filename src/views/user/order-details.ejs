@@ -1,0 +1,103 @@
+<%- include("../includes/head") %>
+<%- include("../includes/navigation") %>
+
+<main class="container-fluid py-4">
+  <%- include("../includes/breadcrumbs") %>
+  <%- include("../includes/flash-messages") %>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Porudžbina #<%= data.order?.id?.slice(-6) || 'Nepoznato' %></h1>
+    <a href="/profil/porudzbine?tab=orders" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Nazad
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Stavke porudžbine</h5>
+        </div>
+        <div class="card-body">
+          <% const items = data.order?.stavke || []; %>
+          <% if (items.length > 0) { %>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Slika</th>
+                    <th>Naziv</th>
+                    <th>Veličina</th>
+                    <th>Boja</th>
+                    <th>Cena</th>
+                    <th>Količina</th>
+                    <th>Ukupno</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% items.forEach(item => { %>
+                    <tr>
+                      <td>
+                        <img src="/images/items/<%= item.slika || 'placeholder.jpg' %>" alt="<%= item.naziv %>" class="rounded table-img-thumb">
+                      </td>
+                      <td><%= item.naziv || 'Nepoznato' %></td>
+                      <td><%= item.velicina || '-' %></td>
+                      <td><%= item.boja || '-' %></td>
+                      <td><%= item.cena || 0 %> RSD</td>
+                      <td><%= item.kolicina || 0 %></td>
+                      <td><%= ((item.cena || 0) * (item.kolicina || 0)).toLocaleString('sr-RS') %> RSD</td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="text-muted">Nema stavki za ovu porudžbinu.</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Informacije o porudžbini</h5>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-5 text-muted">Status</dt>
+            <dd class="col-sm-7">
+              <span class="badge bg-<%= data.order?.statusBadge || 'secondary' %>">
+                <%= data.order?.statusLabel || data.order?.status || 'Nepoznat' %>
+              </span>
+            </dd>
+
+            <dt class="col-sm-5 text-muted">Ukupno</dt>
+            <dd class="col-sm-7"><strong><%= data.order?.ukupno || '0 RSD' %></strong></dd>
+
+            <dt class="col-sm-5 text-muted">Datum kreiranja</dt>
+            <dd class="col-sm-7"><%= data.order?.kreirano || 'Nepoznato' %></dd>
+
+            <% if (data.order?.adresa) { %>
+              <dt class="col-sm-5 text-muted">Adresa isporuke</dt>
+              <dd class="col-sm-7">
+                <%= data.order.adresa.street || '' %> <%= data.order.adresa.number || '' %><br>
+                <%= data.order.adresa.postalCode || '' %> <%= data.order.adresa.city || '' %>
+              </dd>
+            <% } else { %>
+              <dt class="col-sm-5 text-muted">Adresa isporuke</dt>
+              <dd class="col-sm-7 text-muted">Nije dostupna</dd>
+            <% } %>
+
+            <% if (data.order?.napomena) { %>
+              <dt class="col-sm-5 text-muted">Napomena</dt>
+              <dd class="col-sm-7"><%= data.order.napomena %></dd>
+            <% } %>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include("../includes/footer") %>

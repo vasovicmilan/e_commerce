@@ -4,6 +4,7 @@ import * as userRepo from "../repositories/user.repository.js";
 import * as userMapper from "../mappers/user.mapper.js";
 import * as roleService from "./role.service.js";
 import { hashPassword, generateRandomToken, sha256 } from "./crypto.service.js";
+import * as itemService from "./item.service.js";
 import { encryptTelephone, encryptAddress } from "../utils/encryption.util.js";
 import {
   validationError,
@@ -910,6 +911,33 @@ export async function findUserByPartnerSlug(slug, populateFields = null) {
   return userRepo.findUserByPartnerSlug(slug, populateFields);
 }
 
+// ============================================================
+//  WISHLIST – wrapperi za itemService
+// ============================================================
+
+export async function getUserWishlist(userId, options = {}) {
+  if (!userId) validationError("userId");
+  return itemService.getUserWishlist(userId, options);
+}
+
+export async function addToWishlist(userId, itemId) {
+  if (!userId) validationError("userId");
+  if (!itemId) validationError("itemId");
+  return itemService.addToWishlist(itemId, userId);
+}
+
+export async function removeFromWishlist(userId, itemId) {
+  if (!userId) validationError("userId");
+  if (!itemId) validationError("itemId");
+  return itemService.removeFromWishlist(itemId, userId);
+}
+
+export async function isInWishlist(userId, itemId) {
+  if (!userId) return false;
+  if (!itemId) return false;
+  return itemService.isInWishlist(itemId, userId);
+}
+
 export default {
   listUsers, getUserById, getUserRawById, getUserForEdit,
   updateUser, updateUserStatus, updateUserRole, deleteUser,
@@ -926,4 +954,8 @@ export default {
   getUserStats, updateUserPartner, updatePartnerData,
   checkSlugAvailability, updatePartnerSlug,
   findUserByPartnerSlug,
+  getUserWishlist,
+  addToWishlist,
+  removeFromWishlist,
+  isInWishlist,
 };

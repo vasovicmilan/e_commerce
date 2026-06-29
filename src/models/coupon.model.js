@@ -23,7 +23,6 @@ const CouponSchema = new Schema(
       required: true,
       min: 0,
     },
-    // GLOBALNI LIMIT – ukupan broj korišćenja (null = neograničeno)
     usageLimit: {
       type: Number,
       default: null,
@@ -34,7 +33,6 @@ const CouponSchema = new Schema(
       default: 0,
       min: 0,
     },
-    // 🔥 IZMENA: default null (neograničeno po korisniku)
     usagePerUser: {
       type: Number,
       default: null,
@@ -64,6 +62,28 @@ const CouponSchema = new Schema(
         userId: {
           type: Schema.Types.ObjectId,
           ref: "User",
+        },
+        temporaryOrderId: {
+          type: Schema.Types.ObjectId,
+          ref: "TemporaryOrder",
+        },
+        usedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        orderId: {
+          type: Schema.Types.ObjectId,
+          ref: "Order",
+        },
+      },
+    ],
+    usedByGuests: [
+      {
+        email: {
+          type: String,
+          required: true,
+          lowercase: true,
+          trim: true,
         },
         temporaryOrderId: {
           type: Schema.Types.ObjectId,

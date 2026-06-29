@@ -29,6 +29,7 @@ function getStatusBadgeClass(status) {
     processing: "primary",
     shipped: "info",
     delivered: "success",
+    completed: "success",
     cancelled: "danger",
     returned: "secondary",
     refunded: "secondary",
@@ -44,6 +45,7 @@ function getStatusLabel(status) {
     processing: "U obradi",
     shipped: "Poslata",
     delivered: "Isporučena",
+    completed: "Završena",
     cancelled: "Otkazana",
     returned: "Vraćena",
     refunded: "Refundirana",
@@ -59,6 +61,16 @@ function getStatusLabel(status) {
 export function prepareProfileData(user) {
   if (!user) return {};
 
+  // ✅ Map orders with status badges
+  const orders = (user.porudzbine || []).map(order => ({
+    id: order.id,
+    status: order.status,
+    ukupno: order.ukupno || order.totalPrice || 0,
+    kreirana: order.kreirana || order.createdAt || null,
+    statusBadge: getStatusBadgeClass(order.status),
+    statusLabel: getStatusLabel(order.status),
+  }));
+
   return {
     user: {
       id: user.id,
@@ -69,19 +81,16 @@ export function prepareProfileData(user) {
       avatar: user.osnovno.avatar || null,
       provider: user.osnovno.provider,
       role: user.osnovno.rola,
+      osnovno: user.osnovno, // keep original for fallback
     },
     telephones: user.kontakt?.telefoni || [],
     addresses: user.kontakt?.adrese || [],
-    orders: user.porudzbine || [],
+    orders: orders, // ✅ glavni ključ za porudžbine
     partner: user.partner || null,
     vreme: user.vreme || {},
-    // Form data placeholders
     formData: {},
     errors: {},
-    messages: {
-      success: [],
-      error: [],
-    },
+    messages: [],
   };
 }
 
@@ -93,12 +102,18 @@ export function prepareProfileDataWithErrors(user, errors, formData) {
 }
 
 // ============================================================
-//  PORUDŽBINE
+//  PORUDŽBINE (lista)
 // ============================================================
 
 export function prepareOrdersData(result) {
+  const orders = (result.data || []).map(order => ({
+    ...order,
+    statusBadge: getStatusBadgeClass(order.statusRaw || order.status),
+    statusLabel: getStatusLabel(order.statusRaw || order.status),
+  }));
+
   return {
-    orders: result.data || [],
+    orders: orders,
     pagination: {
       currentPage: result.page || 1,
       totalPages: result.totalPages || 1,
@@ -106,6 +121,10 @@ export function prepareOrdersData(result) {
     },
   };
 }
+
+// ============================================================
+//  DETALJI PORUDŽBINE
+// ============================================================
 
 export function prepareOrderDetailsData(order) {
   if (!order) return {};
@@ -124,7 +143,31 @@ export function prepareOrderDetailsData(order) {
 }
 
 // ============================================================
-//  PARTNERSKA PRODAVNICA (SHOP)
+//  LISTA ŽELJA
+// ============================================================
+
+export function prepareWishlistData(result) {
+  const items = (result.data || []).map(item => ({
+    id: item.id,
+    naziv: item.naziv || item.title,
+    cena: item.cena || item.ukupno || "0 RSD",
+    ukupno: item.ukupno || item.cena || "0 RSD",
+    featureImage: item.featureImage || null,
+    slug: item.slug || item.id,
+  }));
+
+  return {
+    items: items,
+    pagination: {
+      currentPage: result.page || 1,
+      totalPages: result.totalPages || 1,
+      total: result.total || 0,
+    },
+  };
+}
+
+// ============================================================
+//  PARTNERSKA PRODAVNICA
 // ============================================================
 
 export function prepareShopData(shop) {
@@ -149,7 +192,7 @@ export function prepareShopData(shop) {
 }
 
 // ============================================================
-//  PODEŠAVANJA (SETTINGS)
+//  PODEŠAVANJA
 // ============================================================
 
 export function prepareSettingsData(user) {
@@ -166,10 +209,7 @@ export function prepareSettingsData(user) {
     },
     formData: {},
     errors: {},
-    messages: {
-      success: [],
-      error: [],
-    },
+    messages: [],
   };
 }
 
@@ -189,6 +229,7 @@ export default {
   prepareProfileDataWithErrors,
   prepareOrdersData,
   prepareOrderDetailsData,
+  prepareWishlistData,
   prepareShopData,
   prepareSettingsData,
   prepareSettingsDataWithErrors,

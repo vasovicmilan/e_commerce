@@ -35,6 +35,13 @@ function getUserUsageCount(coupon, userId) {
   return (coupon.usedBy || []).filter((entry) => entry.userId.toString() === userId).length;
 }
 
+// ✅ Dodato samo za evidenciju – ne utiče na validaciju
+function getGuestUsageCount(coupon, email) {
+  if (!email) return 0;
+  email = email.toLowerCase().trim();
+  return (coupon.usedByGuests || []).filter((entry) => entry.email === email).length;
+}
+
 export async function listCoupons({
   search,
   isActive,
@@ -199,7 +206,7 @@ export async function deleteCoupon(couponId) {
   return { deleted: true, id: couponId };
 }
 
-export async function validateCouponForCheckout(code, cartTotal, userId = null) {
+export async function validateCouponForCheckout(code, cartTotal, userId = null, guestEmail = null) {
   if (!code) validationError("code");
 
   const coupon = await couponRepo.findCouponByCode(code);
@@ -218,6 +225,7 @@ export async function validateCouponForCheckout(code, cartTotal, userId = null) 
     badRequest(`Minimalni iznos korpe za ovaj kupon je ${coupon.minCartAmount} RSD`);
   }
 
+  // ✅ ORIGINAL LOGIKA ZA GOSTE – NE MENJAMO
   if (!userId) {
     if (coupon.allowedUsers && coupon.allowedUsers.length > 0) {
       badRequest("Ovaj kupon je ograničen na određene korisnike. Molimo prijavite se.");
@@ -228,6 +236,7 @@ export async function validateCouponForCheckout(code, cartTotal, userId = null) 
     return mapCouponForCheckout(coupon);
   }
 
+  // ✅ ZA ULOGOVANE – ORIGINALNA LOGIKA
   if (!isUserAllowed(coupon, userId)) {
     badRequest("Ovaj kupon nije namenjen vama");
   }
@@ -242,8 +251,9 @@ export async function validateCouponForCheckout(code, cartTotal, userId = null) 
   return mapCouponForCheckout(coupon);
 }
 
-export async function applyCouponDiscount(couponCode, cartTotal, userId = null) {
-  await validateCouponForCheckout(couponCode, cartTotal, userId);
+export async function applyCouponDiscount(couponCode, cartTotal, userId = null, guestEmail = null) {
+  // guestEmail se prosleđuje ali se ne koristi u validaciji (čuva se originalna logika)
+  await validateCouponForCheckout(couponCode, cartTotal, userId, guestEmail);
 
   const coupon = await couponRepo.findCouponByCode(couponCode);
   if (!coupon) return { discount: 0, finalTotal: cartTotal };
@@ -262,8 +272,14 @@ export async function applyCouponDiscount(couponCode, cartTotal, userId = null) 
   };
 }
 
-// 🔥 Phase 1: Mark coupon as used with temporaryOrderId
-export async function markCouponAsUsed(couponId, temporaryOrderId, userId, session = null) {
+// 🔥 Phase 1: Mark coupon as used with temporaryOrderId (podržava i goste za evidenciju)
+export async function markCouponAsUsed(
+  couponId,
+  temporaryOrderId,
+  userId = null,
+  guestEmail = null,
+  session = null
+) {
   if (!couponId) return null;
   const coupon = await couponRepo.findCouponById(couponId, null, session, false);
   if (!coupon) return null;
@@ -279,51 +295,119 @@ export async function markCouponAsUsed(couponId, temporaryOrderId, userId, sessi
       usedAt: new Date(),
       orderId: null,
     });
+  } else if (guestEmail) {
+    // ✅ Samo evidencija – ne utiče na validaciju
+    coupon.usedByGuests.push({
+      email: guestEmail.toLowerCase().trim(),
+      temporaryOrderId,
+      usedAt: new Date(),
+      orderId: null,
+    });
+  } else {
+    // Ovo se ne bi trebalo desiti, ali ostavljamo kao zaštitu
+    throw badRequest("Nedostaje identifikacija korisnika za korišćenje kupona");
   }
 
   await coupon.save({ session });
   return coupon;
 }
 
-// 🔥 Phase 2: Update usage with orderId after confirmation (oslobađa temporaryOrderId)
-export async function updateCouponUsedByOrder(couponId, userId, temporaryOrderId, orderId, session = null) {
-  if (!couponId || !userId || !temporaryOrderId || !orderId) return null;
+// 🔥 Phase 2: Update usage with orderId (za registrovane i goste – samo evidencija)
+export async function updateCouponUsedByOrder(
+  couponId,
+  userId = null,
+  guestEmail = null,
+  temporaryOrderId,
+  orderId,
+  session = null
+) {
+  if (!couponId || !temporaryOrderId || !orderId) return null;
+  if (!userId && !guestEmail) return null;
 
   const coupon = await couponRepo.findCouponById(couponId, null, session, false);
   if (!coupon) return null;
 
-  const entry = coupon.usedBy.find(
-    (u) => u.userId.toString() === userId.toString() &&
-           u.temporaryOrderId && u.temporaryOrderId.toString() === temporaryOrderId.toString()
-  );
+  let updated = false;
 
-  if (entry) {
-    entry.orderId = orderId;
-    entry.temporaryOrderId = null; // 🔥 Oslobađamo referencu jer temporary order više ne postoji
-    entry.usedAt = new Date();
+  if (userId) {
+    const entry = coupon.usedBy.find(
+      (u) =>
+        u.userId.toString() === userId.toString() &&
+        u.temporaryOrderId &&
+        u.temporaryOrderId.toString() === temporaryOrderId.toString()
+    );
+    if (entry) {
+      entry.orderId = orderId;
+      entry.temporaryOrderId = null;
+      entry.usedAt = new Date();
+      updated = true;
+    }
+  } else if (guestEmail) {
+    const email = guestEmail.toLowerCase().trim();
+    const entry = coupon.usedByGuests.find(
+      (u) =>
+        u.email === email &&
+        u.temporaryOrderId &&
+        u.temporaryOrderId.toString() === temporaryOrderId.toString()
+    );
+    if (entry) {
+      entry.orderId = orderId;
+      entry.temporaryOrderId = null;
+      entry.usedAt = new Date();
+      updated = true;
+    }
+  }
+
+  if (updated) {
     await coupon.save({ session });
   }
 
   return coupon;
 }
 
-// 🔥 Release coupon (remove usage and decrement count) - koristi temporaryOrderId
-export async function releaseCoupon(couponId, userId, temporaryOrderId, session = null) {
-  if (!couponId || !userId || !temporaryOrderId) return null;
+// 🔥 Release coupon – oslobađa korišćenje (za registrovane i goste)
+export async function releaseCoupon(
+  couponId,
+  userId = null,
+  guestEmail = null,
+  temporaryOrderId,
+  session = null
+) {
+  if (!couponId || !temporaryOrderId) return null;
+  if (!userId && !guestEmail) return null;
 
   const coupon = await couponRepo.findCouponById(couponId, null, session, false);
   if (!coupon) return null;
 
-  const initialLength = coupon.usedBy.length;
-  coupon.usedBy = coupon.usedBy.filter(
-    (u) => !(u.userId.toString() === userId.toString() &&
-             u.temporaryOrderId && u.temporaryOrderId.toString() === temporaryOrderId.toString())
-  );
+  let removed = false;
 
-  if (coupon.usedBy.length < initialLength) {
-    if (hasGlobalLimit(coupon)) {
-      coupon.usedCount = Math.max(0, coupon.usedCount - 1);
-    }
+  if (userId) {
+    const initialLength = coupon.usedBy.length;
+    coupon.usedBy = coupon.usedBy.filter(
+      (u) =>
+        !(
+          u.userId.toString() === userId.toString() &&
+          u.temporaryOrderId &&
+          u.temporaryOrderId.toString() === temporaryOrderId.toString()
+        )
+    );
+    if (coupon.usedBy.length < initialLength) removed = true;
+  } else if (guestEmail) {
+    const email = guestEmail.toLowerCase().trim();
+    const initialLength = coupon.usedByGuests.length;
+    coupon.usedByGuests = coupon.usedByGuests.filter(
+      (u) =>
+        !(
+          u.email === email &&
+          u.temporaryOrderId &&
+          u.temporaryOrderId.toString() === temporaryOrderId.toString()
+        )
+    );
+    if (coupon.usedByGuests.length < initialLength) removed = true;
+  }
+
+  if (removed && hasGlobalLimit(coupon)) {
+    coupon.usedCount = Math.max(0, coupon.usedCount - 1);
     await coupon.save({ session });
   }
 

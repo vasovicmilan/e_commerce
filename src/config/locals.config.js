@@ -14,16 +14,16 @@ export function setupLocals(app) {
     res.locals.userRole = userRole;
 
     res.locals.isAdmin = userRole === "Administrator" || user?.role === "Administrator" || user?.roleName === "Administrator";
-    
+
     res.locals.isPartner = user?.isPartner === true || user?.partner?.isPartner === true;
-    
+
     res.locals.isGuest = !user;
 
     res.locals.BASE_URL = process.env.BASE_URL || "https://www.tophelanke.com";
     res.locals.SITE_NAME = process.env.SITE_NAME || "TopHelanke";
     res.locals.CURRENT_YEAR = new Date().getFullYear();
     res.locals.NODE_ENV = process.env.NODE_ENV || "development";
-    
+
     res.locals.currentPath = req.originalUrl;
     res.locals.isAdminRoute = req.originalUrl.startsWith("/admin");
 
@@ -32,13 +32,18 @@ export function setupLocals(app) {
       res.locals.cartItemCount = 0;
     }
 
-    res.locals.flash = req.flash ? {
-      success: req.flash("success"),
-      error: req.flash("error"),
-      warning: req.flash("warning"),
-      info: req.flash("info"),
-    } : {};
-    
+    // Pročitaj sve flash poruke odjednom (ovo ih prazni)
+    const flashMessages = req.flash ? req.flash() : {};
+
+    // Postavi pojedinačne varijable za flash-messages parcijal
+    res.locals.success = flashMessages.success || [];
+    res.locals.error = flashMessages.error || [];
+    res.locals.warning = flashMessages.warning || [];
+    res.locals.info = flashMessages.info || [];
+
+    // Opciono, ako negde treba ceo objekat
+    res.locals.flash = flashMessages;
+
     next();
   });
 }
