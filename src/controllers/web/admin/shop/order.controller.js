@@ -2,6 +2,7 @@ import * as orderService from "../../../../services/order.service.js";
 import { getAllowedStatuses } from "../../../../models/order-status-transitions.js";
 import { prepareOrderListData, prepareOrderDetailsData } from "../../../../presenters/admin/order.presenter.js";
 import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 export async function listOrders(req, res, next) {
   try {
@@ -70,8 +71,11 @@ export async function updateStatus(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/porudzbine/detalji/${orderId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/porudzbine/detalji/${orderId}`
+      );
     }
 
     await orderService.updateOrderStatusByAdmin(orderId, status);
@@ -82,16 +86,21 @@ export async function updateStatus(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Status porudžbine je uspešno promenjen");
-    return res.redirect(`/admin/porudzbine/detalji/${orderId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Status porudžbine je uspešno promenjen",
+      `/admin/porudzbine/detalji/${orderId}`
+    );
   } catch (error) {
     logError(`[updateStatus] Greška pri promeni statusa porudžbine`, error, {
       orderId: req.params.orderId,
       requestedStatus: req.body.status,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/porudzbine/detalji/${req.params.orderId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/porudzbine/detalji/${req.params.orderId}`
+    );
   }
 }
 
@@ -107,15 +116,20 @@ export async function updateContactInfo(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kontakt informacije su uspešno ažurirane");
-    return res.redirect(`/admin/porudzbine/detalji/${orderId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Kontakt informacije su uspešno ažurirane",
+      `/admin/porudzbine/detalji/${orderId}`
+    );
   } catch (error) {
     logError(`[updateContactInfo] Greška pri ažuriranju kontakt info`, error, {
       orderId: req.params.orderId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/porudzbine/detalji/${req.params.orderId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/porudzbine/detalji/${req.params.orderId}`
+    );
   }
 }
 

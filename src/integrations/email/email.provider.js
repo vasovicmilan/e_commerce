@@ -1,4 +1,6 @@
+// integrations/email/email.provider.js
 import nodemailer from "nodemailer";
+import { logInfo, logError } from "../../utils/logger.util.js";
 
 let transporter = null;
 
@@ -16,7 +18,6 @@ function getTransporter() {
       },
     });
   } else {
-    // Development - koristi Mailtrap ili Ethereal
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.ethereal.email",
       port: parseInt(process.env.SMTP_PORT || "587"),
@@ -46,12 +47,13 @@ export async function sendEmail({ to, subject, html, attachments = [] }) {
     const info = await transporter.sendMail(mailOptions);
 
     if (process.env.NODE_ENV === "development") {
-      console.log(`[EMAIL] Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      logInfo(`[EMAIL] Preview URL: ${previewUrl || 'N/A'}`);
     }
 
     return { sent: true, messageId: info.messageId };
   } catch (error) {
-    console.error("[EMAIL] Failed to send:", error.message);
+    logError(`[EMAIL] Failed to send email to ${to}`, error);
     throw error;
   }
 }

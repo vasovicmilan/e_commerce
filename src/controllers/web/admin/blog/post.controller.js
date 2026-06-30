@@ -6,7 +6,8 @@ import {
   preparePostDetailsData,
   preparePostFormData,
 } from "../../../../presenters/admin/post.presenter.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 export async function listPosts(req, res, next) {
   try {
@@ -191,15 +192,17 @@ export async function createPost(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Blog post je uspešno kreiran. Dodajte sadržaj.");
-    return res.redirect(`/admin/blog/${post.id}/sadrzaj`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Blog post je uspešno kreiran. Dodajte sadržaj.",
+      `/admin/blog/${post.id}/sadrzaj`
+    );
   } catch (error) {
     logError(`[createPost] Greška pri kreiranju posta`, error, {
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 409) {
-      req.flash("error", error.message);
       const categoriesResult = await categoryService.listCategories({ domain: 'post', limit: 1000, page: 1 });
       const tagsResult = await tagService.listTags({ domain: 'post', limit: 1000, page: 1 });
       const formData = preparePostFormData(null, categoriesResult.data || [], tagsResult.data || []);
@@ -271,8 +274,11 @@ export async function updatePost(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Blog post je uspešno ažuriran");
-    return res.redirect(`/admin/blog/detalji/${postId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Blog post je uspešno ažuriran",
+      `/admin/blog/detalji/${postId}`
+    );
   } catch (error) {
     logError(`[updatePost] Greška pri ažuriranju posta`, error, {
       postId: req.params.postId,
@@ -280,8 +286,10 @@ export async function updatePost(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 404 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/blog/izmena/${req.params.postId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/blog/izmena/${req.params.postId}`
+      );
     }
     next(error);
   }
@@ -319,8 +327,11 @@ export async function updateContent(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/blog/${postId}/sadrzaj`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/blog/${postId}/sadrzaj`
+      );
     }
 
     // Prihvati content kao niz blokova
@@ -362,16 +373,21 @@ export async function updateContent(req, res, next) {
       brojBlokova: content.length,
     });
 
-    req.flash("success", "Sadržaj je uspešno ažuriran");
-    return res.redirect(`/admin/blog/${postId}/sadrzaj`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Sadržaj je uspešno ažuriran",
+      `/admin/blog/${postId}/sadrzaj`
+    );
   } catch (error) {
     logError(`[updateContent] Greška pri ažuriranju sadržaja posta`, error, {
       postId: req.params.postId,
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/blog/${req.params.postId}/sadrzaj`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/blog/${req.params.postId}/sadrzaj`
+    );
   }
 }
 
@@ -407,8 +423,11 @@ export async function updateSeo(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/blog/${postId}/seo`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/blog/${postId}/seo`
+      );
     }
 
     const seoData = {
@@ -432,16 +451,21 @@ export async function updateSeo(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "SEO podaci su uspešno ažurirani");
-    return res.redirect(`/admin/blog/${postId}/seo`);
+    return flashAndRedirect(
+      req, res, "success",
+      "SEO podaci su uspešno ažurirani",
+      `/admin/blog/${postId}/seo`
+    );
   } catch (error) {
     logError(`[updateSeo] Greška pri ažuriranju SEO podataka`, error, {
       postId: req.params.postId,
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/blog/${req.params.postId}/seo`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/blog/${req.params.postId}/seo`
+    );
   }
 }
 
@@ -455,8 +479,11 @@ export async function updateStatus(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/blog/detalji/${postId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/blog/detalji/${postId}`
+      );
     }
 
     await postService.updatePostStatus(postId, status);
@@ -467,16 +494,21 @@ export async function updateStatus(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Status je uspešno promenjen");
-    return res.redirect(`/admin/blog/detalji/${postId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Status je uspešno promenjen",
+      `/admin/blog/detalji/${postId}`
+    );
   } catch (error) {
     logError(`[updateStatus] Greška pri promeni statusa posta`, error, {
       postId: req.params.postId,
       requestedStatus: req.body.status,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/blog/detalji/${req.params.postId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/blog/detalji/${req.params.postId}`
+    );
   }
 }
 
@@ -489,8 +521,7 @@ export async function deletePost(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID posta");
-      return res.redirect("/admin/blog");
+      return flashAndRedirect(req, res, "error", "Neispravan ID posta", "/admin/blog");
     }
 
     await postService.deletePost(postId);
@@ -500,15 +531,13 @@ export async function deletePost(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Blog post je uspešno obrisan");
-    return res.redirect("/admin/blog");
+    return flashAndRedirect(req, res, "success", "Blog post je uspešno obrisan", "/admin/blog");
   } catch (error) {
     logError(`[deletePost] Greška pri brisanju posta`, error, {
       postId: req.params.postId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/blog");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/blog");
   }
 }
 
@@ -531,12 +560,11 @@ export async function searchRedirect(req, res, next) {
 }
 
 // ============================================================
-//  UPLOAD SLIKE ZA SADRŽAJ (editor)
+//  UPLOAD SLIKE ZA SADRŽAJ (editor) — JSON endpoint, no flash
 // ============================================================
 
 export async function uploadContentImage(req, res, next) {
   try {
-    // Provera da li je slika upload-ovana
     if (!req.uploadedFile || !req.uploadedFile.img) {
       logWarn(`[uploadContentImage] Slika nije upload-ovana`, {
         userId: req.session?.user?.id || req.session?.user?._id,
@@ -547,7 +575,6 @@ export async function uploadContentImage(req, res, next) {
       });
     }
 
-    // Vrati putanju do slike (medium verzija)
     const imageUrl = `/images/posts/${req.uploadedFile.img}`;
 
     logInfo(`[uploadContentImage] Slika uspešno upload-ovana: ${imageUrl}`, {

@@ -4,6 +4,7 @@ import {
   prepareHistoryDetailsData,
 } from "../../../../presenters/admin/history.presenter.js";
 import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 export async function listHistory(req, res, next) {
   try {
@@ -82,8 +83,7 @@ export async function deleteHistory(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID");
-      return res.redirect("/admin/istorija");
+      return flashAndRedirect(req, res, "error", "Neispravan ID", "/admin/istorija");
     }
 
     await historyService.deleteHistory(historyId);
@@ -93,15 +93,13 @@ export async function deleteHistory(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Unos istorije je uspešno obrisan");
-    return res.redirect("/admin/istorija");
+    return flashAndRedirect(req, res, "success", "Unos istorije je uspešno obrisan", "/admin/istorija");
   } catch (error) {
     logError(`[deleteHistory] Greška pri brisanju unosa istorije`, error, {
       historyId: req.params.historyId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/istorija");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/istorija");
   }
 }
 

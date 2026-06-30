@@ -9,7 +9,8 @@ import {
   prepareUserFormData,
 } from "../../../../presenters/admin/user.presenter.js";
 import { badRequest } from "../../../../utils/error.util.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 export async function listUsers(req, res, next) {
   try {
@@ -81,6 +82,7 @@ export async function userDetails(req, res, next) {
   }
 }
 
+// FIX M5: validation errors re-render with formData (was already correct here, kept as-is)
 export async function updateUser(req, res, next) {
   try {
     const { userId } = req.params;
@@ -116,8 +118,11 @@ export async function updateUser(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Korisnik je uspešno ažuriran");
-    return res.redirect(`/admin/korisnici/detalji/${userId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Korisnik je uspešno ažuriran",
+      `/admin/korisnici/detalji/${userId}`
+    );
   } catch (error) {
     logError(`[updateUser] Greška pri ažuriranju korisnika`, error, {
       userId: req.params.userId,
@@ -125,8 +130,10 @@ export async function updateUser(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 403 || error.statusCode === 404) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/korisnici/izmena/${req.params.userId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/korisnici/izmena/${req.params.userId}`
+      );
     }
     next(error);
   }
@@ -143,8 +150,11 @@ export async function updateUserStatus(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/korisnici/detalji/${userId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/korisnici/detalji/${userId}`
+      );
     }
 
     await userService.updateUserStatus(userId, status, currentUserId);
@@ -155,8 +165,11 @@ export async function updateUserStatus(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Status korisnika je uspešno promenjen");
-    return res.redirect(`/admin/korisnici/detalji/${userId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Status korisnika je uspešno promenjen",
+      `/admin/korisnici/detalji/${userId}`
+    );
   } catch (error) {
     logError(`[updateUserStatus] Greška pri promeni statusa korisnika`, error, {
       userId: req.params.userId,
@@ -164,8 +177,10 @@ export async function updateUserStatus(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 403 || error.statusCode === 404) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/korisnici/detalji/${req.params.userId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/korisnici/detalji/${req.params.userId}`
+      );
     }
     next(error);
   }
@@ -182,8 +197,11 @@ export async function updateUserRole(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/korisnici/detalji/${userId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/korisnici/detalji/${userId}`
+      );
     }
 
     await userService.updateUserRole(userId, role, currentUserId);
@@ -194,8 +212,11 @@ export async function updateUserRole(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Rola korisnika je uspešno promenjena");
-    return res.redirect(`/admin/korisnici/detalji/${userId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Rola korisnika je uspešno promenjena",
+      `/admin/korisnici/detalji/${userId}`
+    );
   } catch (error) {
     logError(`[updateUserRole] Greška pri promeni role korisnika`, error, {
       userId: req.params.userId,
@@ -203,8 +224,10 @@ export async function updateUserRole(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 403 || error.statusCode === 404) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/korisnici/detalji/${req.params.userId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/korisnici/detalji/${req.params.userId}`
+      );
     }
     next(error);
   }
@@ -220,8 +243,7 @@ export async function deleteUser(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID korisnika");
-      return res.redirect("/admin/korisnici");
+      return flashAndRedirect(req, res, "error", "Neispravan ID korisnika", "/admin/korisnici");
     }
 
     await userService.deleteUser(userId, currentUserId);
@@ -231,15 +253,13 @@ export async function deleteUser(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Korisnik je uspešno obrisan");
-    return res.redirect("/admin/korisnici");
+    return flashAndRedirect(req, res, "success", "Korisnik je uspešno obrisan", "/admin/korisnici");
   } catch (error) {
     logError(`[deleteUser] Greška pri brisanju korisnika`, error, {
       userId: req.params.userId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/korisnici");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/korisnici");
   }
 }
 
@@ -272,20 +292,21 @@ export async function verifyUser(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    if (result.verified) {
-      req.flash("success", result.message);
-    } else {
-      req.flash("info", result.message);
-    }
-
-    return res.redirect(`/admin/korisnici/detalji/${userId}`);
+    return flashAndRedirect(
+      req, res,
+      result.verified ? "success" : "info",
+      result.message,
+      `/admin/korisnici/detalji/${userId}`
+    );
   } catch (error) {
     logError(`[verifyUser] Greška pri verifikaciji korisnika`, error, {
       userId: req.params.userId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/korisnici/detalji/${req.params.userId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/korisnici/detalji/${req.params.userId}`
+    );
   }
 }
 
@@ -300,8 +321,11 @@ export async function updateUserPartner(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/korisnici/detalji/${userId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/korisnici/detalji/${userId}`
+      );
     }
 
     const partnerStatus = isPartner === "true" || isPartner === true || isPartner === "1";
@@ -314,8 +338,11 @@ export async function updateUserPartner(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", `Partnerstvo je uspešno ${partnerStatus ? 'aktiviran' : 'deaktiviran'}o`);
-    return res.redirect(`/admin/korisnici/detalji/${userId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      `Partnerstvo je uspešno ${partnerStatus ? 'aktiviran' : 'deaktiviran'}o`,
+      `/admin/korisnici/detalji/${userId}`
+    );
   } catch (error) {
     logError(`[updateUserPartner] Greška pri ažuriranju partnerstva`, error, {
       userId: req.params.userId,
@@ -323,8 +350,10 @@ export async function updateUserPartner(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 403 || error.statusCode === 404) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/korisnici/detalji/${req.params.userId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/korisnici/detalji/${req.params.userId}`
+      );
     }
     next(error);
   }
@@ -333,12 +362,13 @@ export async function updateUserPartner(req, res, next) {
 export async function editPartnerForm(req, res, next) {
   try {
     const { userId } = req.params;
-    // KORISTIMO SERVICE umesto direktnog repo poziva
     const rawUser = await userService.getUserRawById(userId);
 
     if (!rawUser.partner?.isPartner) {
-      req.flash("error", "Korisnik nije partner");
-      return res.redirect(`/admin/korisnici/detalji/${userId}`);
+      return flashAndRedirect(
+        req, res, "error", "Korisnik nije partner",
+        `/admin/korisnici/detalji/${userId}`
+      );
     }
 
     let logoUrl = rawUser.partner.shop?.logo || '';
@@ -367,7 +397,6 @@ export async function editPartnerForm(req, res, next) {
         ...partnerData,
         formAction: `/admin/korisnici/${userId}/partner/data`,
         cancelUrl: `/admin/korisnici/detalji/${userId}`,
-        // csrfToken: req.csrfToken ? req.csrfToken() : '',
       },
     });
   } catch (error) {
@@ -411,7 +440,6 @@ export async function updatePartnerData(req, res, next) {
       if (!sanitized) {
         throw badRequest("Slug sadrži nedozvoljene karaktere");
       }
-      // Provera dostupnosti preko service-a
       const availability = await userService.checkSlugAvailability(sanitized, userId);
       if (!availability.available) {
         throw badRequest(availability.message);
@@ -435,8 +463,11 @@ export async function updatePartnerData(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Partner podaci su uspešno ažurirani");
-    return res.redirect(`/admin/korisnici/detalji/${userId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Partner podaci su uspešno ažurirani",
+      `/admin/korisnici/detalji/${userId}`
+    );
   } catch (error) {
     logError(`[updatePartnerData] Greška pri ažuriranju partner podataka`, error, {
       userId: req.params.userId,
@@ -444,8 +475,10 @@ export async function updatePartnerData(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 403 || error.statusCode === 404 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/korisnici/${userId}/partner/edit`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/korisnici/${req.params.userId}/partner/edit`
+      );
     }
     next(error);
   }

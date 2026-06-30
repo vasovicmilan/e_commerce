@@ -10,7 +10,8 @@ import {
   prepareOrderConfirmedData,
   prepareOrderCancelledData,
 } from "../../../presenters/shop/shop.presenter.js";
-import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../utils/flash.util.js";
 
 export async function shopHome(req, res, next) {
   try {
@@ -222,6 +223,8 @@ export async function cart(req, res, next) {
   }
 }
 
+// FIX H5 + M1: redirect empty cart to /prodavnica/korpa instead of rendering
+// an empty checkout form; removed dead `viewData.messages = req.flash()` line.
 export async function checkout(req, res, next) {
   try {
     const user = req.session?.user || null;
@@ -230,22 +233,22 @@ export async function checkout(req, res, next) {
     if (!data.cart?.items?.length) {
       return res.redirect("/prodavnica/korpa");
     }
- 
+
     const viewData = prepareCheckoutData(data);
- 
-    viewData.prefillCoupon  = req.query.coupon || "";
-    viewData.affiliateCode  = req.query.ref    || "";
- 
+
+    viewData.prefillCoupon = req.query.coupon || "";
+    viewData.affiliateCode = req.query.ref || "";
+
     return res.render("shop/checkout", {
-      pageTitle:       "Porudžbina",
+      pageTitle: "Porudžbina",
       pageDescription: "Završite vašu kupovinu",
-      data:            viewData,
-      // csrfToken:       res.locals.csrfToken,
+      data: viewData,
     });
   } catch (error) {
     next(error);
   }
 }
+
 export async function createOrder(req, res, next) {
   try {
     const user = req.session?.user || null;
@@ -261,7 +264,6 @@ export async function createOrder(req, res, next) {
       const viewData = prepareCheckoutData(data);
       viewData.errors = req.validationErrors;
       viewData.formData = req.body;
-      viewData.messages = req.flash();
 
       return res.render("shop/checkout", {
         pageTitle: data.seo?.pageTitle || "Završetak kupovine",
@@ -300,77 +302,66 @@ export async function createOrder(req, res, next) {
       body: req.body,
     });
     if (error.statusCode === 400) {
-      req.flash("error", error.message);
-      return res.redirect("/prodavnica/checkout");
+      return flashAndRedirect(req, res, "error", error.message, "/prodavnica/checkout");
     }
     next(error);
   }
 }
 
+// FIX M8: redirect to /prodavnica instead of "/" on confirmation failure
 export async function confirmOrder(req, res, next) {
   try {
     const { token, orderId } = req.query;
- 
+
     if (!token || !orderId) {
       return flashAndRedirect(
         req, res, "error",
         "Neispravan link za potvrdu porudžbine.",
-        "/prodavnica"   // ← was "/"
+        "/prodavnica"
       );
     }
- 
-    const result   = await shopService.confirmOrderByToken(token, orderId);
+
+    const result = await shopService.confirmOrderByToken(token, orderId);
     const viewData = prepareOrderConfirmedData(result);
- 
+
     return res.render("shop/order-confirmed", {
-      pageTitle:       "Porudžbina potvrđena",
+      pageTitle: "Porudžbina potvrđena",
       pageDescription: "Vaša porudžbina je uspešno potvrđena",
-      data:            viewData,
+      data: viewData,
     });
   } catch (error) {
-    // Operational errors (expired token, already confirmed, not found)
     if (error.isOperational) {
-      return flashAndRedirect(
-        req, res, "error",
-        error.message,
-        "/prodavnica"   // ← was "/"
-      );
+      return flashAndRedirect(req, res, "error", error.message, "/prodavnica");
     }
     next(error);
   }
 }
 
+// FIX M8: redirect to /profil/porudzbine (logged in) or /prodavnica (guest)
+// instead of "/" on cancellation failure
 export async function cancelOrder(req, res, next) {
   try {
     const { token } = req.query;
-    const user      = req.session?.user || null;
- 
+    const user = req.session?.user || null;
+
     if (!token) {
       const redirectTo = user ? "/profil/porudzbine" : "/prodavnica";
-      return flashAndRedirect(
-        req, res, "error",
-        "Neispravan link za otkazivanje.",
-        redirectTo
-      );
+      return flashAndRedirect(req, res, "error", "Neispravan link za otkazivanje.", redirectTo);
     }
- 
+
     await shopService.cancelOrder(token);
- 
+
     const viewData = prepareOrderCancelledData();
     return res.render("shop/order-cancelled", {
-      pageTitle:       "Porudžbina otkazana",
+      pageTitle: "Porudžbina otkazana",
       pageDescription: "Vaša porudžbina je otkazana",
-      data:            viewData,
+      data: viewData,
     });
   } catch (error) {
     if (error.isOperational) {
-      const user       = req.session?.user || null;
+      const user = req.session?.user || null;
       const redirectTo = user ? "/profil/porudzbine" : "/prodavnica";
-      return flashAndRedirect(
-        req, res, "error",
-        error.message,
-        redirectTo   // ← was "/"
-      );
+      return flashAndRedirect(req, res, "error", error.message, redirectTo);
     }
     next(error);
   }

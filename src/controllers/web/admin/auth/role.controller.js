@@ -4,7 +4,8 @@ import {
   prepareRoleDetailsData,
   prepareRoleFormData,
 } from "../../../../presenters/admin/role.presenter.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 export async function listRoles(req, res, next) {
   try {
@@ -119,15 +120,17 @@ export async function createRole(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Rola je uspešno kreirana");
-    return res.redirect(`/admin/uloge/detalji/${role.id}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Rola je uspešno kreirana",
+      `/admin/uloge/detalji/${role.id}`
+    );
   } catch (error) {
     logError(`[createRole] Greška pri kreiranju role`, error, {
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 409) {
-      req.flash("error", error.message);
       const formData = prepareRoleFormData();
 
       return res.render("admin/_form", {
@@ -178,8 +181,11 @@ export async function updateRole(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Rola je uspešno ažurirana");
-    return res.redirect(`/admin/uloge/detalji/${roleId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Rola je uspešno ažurirana",
+      `/admin/uloge/detalji/${roleId}`
+    );
   } catch (error) {
     logError(`[updateRole] Greška pri ažuriranju role`, error, {
       roleId: req.params.roleId,
@@ -187,8 +193,10 @@ export async function updateRole(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 404 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/uloge/izmena/${req.params.roleId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/uloge/izmena/${req.params.roleId}`
+      );
     }
     next(error);
   }
@@ -203,8 +211,7 @@ export async function deleteRole(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID role");
-      return res.redirect("/admin/uloge");
+      return flashAndRedirect(req, res, "error", "Neispravan ID role", "/admin/uloge");
     }
 
     await roleService.deleteRole(roleId);
@@ -214,15 +221,13 @@ export async function deleteRole(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Rola je uspešno obrisana");
-    return res.redirect("/admin/uloge");
+    return flashAndRedirect(req, res, "success", "Rola je uspešno obrisana", "/admin/uloge");
   } catch (error) {
     logError(`[deleteRole] Greška pri brisanju role`, error, {
       roleId: req.params.roleId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/uloge");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/uloge");
   }
 }
 

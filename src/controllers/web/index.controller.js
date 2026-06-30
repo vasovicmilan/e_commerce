@@ -1,4 +1,3 @@
-// controllers/web/index.controller.js
 import * as indexService from "../../services/index.service.js";
 import * as newsletterService from "../../services/newsletter.service.js";
 import {
@@ -10,6 +9,7 @@ import {
   prepareContactData,
   prepareFaqData,
 } from "../../presenters/public/public.presenter.js";
+import { flashAndRedirect } from "../../utils/flash.util.js";
 
 export async function homePage(req, res, next) {
   try {
@@ -35,7 +35,7 @@ export async function aboutPage(req, res, next) {
       content: viewData.content,
       showForm: viewData.showForm,
       showFaq: viewData.showFaq,
-      data: {}, // nema dodatnih podataka za formu
+      data: {},
     });
   } catch (error) {
     next(error);
@@ -190,16 +190,21 @@ export async function submitContact(req, res, next) {
 export async function submitNewsletter(req, res, next) {
   try {
     if (req.validationErrors) {
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(req.get("referer") || "/");
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        req.get("referer") || "/"
+      );
     }
     await newsletterService.subscribe(req.body);
-    req.flash("success", "Uspešno ste se prijavili na newsletter!");
-    return res.redirect(req.get("referer") || "/");
+    return flashAndRedirect(
+      req, res, "success",
+      "Uspešno ste se prijavili na newsletter!",
+      req.get("referer") || "/"
+    );
   } catch (error) {
     if (error.statusCode === 400 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(req.get("referer") || "/");
+      return flashAndRedirect(req, res, "error", error.message, req.get("referer") || "/");
     }
     next(error);
   }
@@ -208,16 +213,21 @@ export async function submitNewsletter(req, res, next) {
 export async function submitTestimonial(req, res, next) {
   try {
     if (req.validationErrors) {
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(req.get("referer") || "/");
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        req.get("referer") || "/"
+      );
     }
     await indexService.submitTestimonial(req.body);
-    req.flash("success", "Hvala na utisku! Biće objavljen nakon odobrenja.");
-    return res.redirect(req.get("referer") || "/");
+    return flashAndRedirect(
+      req, res, "success",
+      "Hvala na utisku! Biće objavljen nakon odobrenja.",
+      req.get("referer") || "/"
+    );
   } catch (error) {
     if (error.statusCode === 400) {
-      req.flash("error", error.message);
-      return res.redirect(req.get("referer") || "/");
+      return flashAndRedirect(req, res, "error", error.message, req.get("referer") || "/");
     }
     next(error);
   }
@@ -227,16 +237,13 @@ export async function unsubscribeNewsletter(req, res, next) {
   try {
     const { email } = req.query;
     if (!email) {
-      req.flash("error", "Email adresa je obavezna za odjavu.");
-      return res.redirect("/");
+      return flashAndRedirect(req, res, "error", "Email adresa je obavezna za odjavu.", "/");
     }
     await newsletterService.unsubscribe(email);
-    req.flash("success", "Uspešno ste se odjavili sa newsletter-a.");
-    return res.redirect("/");
+    return flashAndRedirect(req, res, "success", "Uspešno ste se odjavili sa newsletter-a.", "/");
   } catch (error) {
     if (error.statusCode === 404) {
-      req.flash("error", "Email adresa nije pronađena.");
-      return res.redirect("/");
+      return flashAndRedirect(req, res, "error", "Email adresa nije pronađena.", "/");
     }
     next(error);
   }

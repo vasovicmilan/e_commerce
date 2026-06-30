@@ -146,5 +146,43 @@
     "maxAttempts": 3,
     "firstAttempt": "2026-06-25T15:50:07.760Z",
     "lastAttempt": "2026-06-25T15:50:07.760Z"
+  },
+  {
+    "type": "order_confirmation",
+    "email": "milan.vasovic.work@gmail.com",
+    "firstName": "Milan",
+    "orderId": "6a43b445d87dafc69d7be183",
+    "error": "/home/milan/Desktop/ecommerc_shop/src/views/emails/order-confirmation.ejs:70\n    68|   <p style=\"color:#999; font-size:12px;\">Ova poruka je automatski generisana. Molimo ne odgovarajte na nju.</p>\n    69| </body>\n >> 70| <%- include(\"_layout\") %>\n\n/home/milan/Desktop/ecommerc_shop/src/views/emails/_layout.ejs:6\n    4|   <meta charset=\"utf-8\">\n    5|   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n >> 6|   <title><%= subject || SITE_NAME %></title>\n    7| </head>\n    8| <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5;\">\n    9|   <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color: #f5f5f5; padding: 20px 0;\">\n\nsubject is not defined",
+    "timestamp": "2026-06-30T12:19:17.740Z",
+    "attempts": 0,
+    "maxAttempts": 3,
+    "firstAttempt": "2026-06-30T12:19:17.741Z",
+    "lastAttempt": "2026-06-30T12:19:17.741Z"
+  },
+  {
+    "type": "order_token",
+    "email": "stivenvasic98@gmail.com",
+    "firstName": "Milan",
+    "orderId": "6a43ddd5856c32ade67982bd",
+    "verificationToken": "8346475629958d51b9edacf24b623836bf79818b916af75b68100176d20135ea",
+    "error": "require is not defined",
+    "timestamp": "2026-06-30T15:16:37.978Z",
+    "attempts": 0,
+    "maxAttempts": 3,
+    "firstAttempt": "2026-06-30T15:16:37.979Z",
+    "lastAttempt": "2026-06-30T15:16:37.979Z"
+  },
+  {
+    "type": "order_token",
+    "email": "stivenvasic98@gmail.com",
+    "firstName": "Milan",
+    "orderId": "6a43de3725beb25e60f5b793",
+    "verificationToken": "f8be1349c1aa2076694def021cecfdfe405a59514c636239a42ee6b3d1c14480",
+    "error": "ejs:15\n    13| `;\n    14| %>\n >> 15| <%- include(\"_layout\") %>\n\nCould not find the include file \"_layout\"",
+    "timestamp": "2026-06-30T15:18:15.630Z",
+    "attempts": 0,
+    "maxAttempts": 3,
+    "firstAttempt": "2026-06-30T15:18:15.630Z",
+    "lastAttempt": "2026-06-30T15:18:15.630Z"
   }
 ]

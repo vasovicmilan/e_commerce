@@ -4,7 +4,8 @@ import {
   prepareCustomerDetailsData,
   prepareCustomerFormData,
 } from "../../../../presenters/admin/customer.presenter.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 export async function listCustomers(req, res, next) {
   try {
@@ -69,6 +70,7 @@ export async function customerDetails(req, res, next) {
   }
 }
 
+// FIX M5: validation errors re-render with formData; business errors flash+redirect
 export async function updateCustomer(req, res, next) {
   try {
     const { customerId } = req.params;
@@ -103,8 +105,11 @@ export async function updateCustomer(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kupac je uspešno ažuriran");
-    return res.redirect(`/admin/kupci/detalji/${customerId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Kupac je uspešno ažuriran",
+      `/admin/kupci/detalji/${customerId}`
+    );
   } catch (error) {
     logError(`[updateCustomer] Greška pri ažuriranju kupca`, error, {
       customerId: req.params.customerId,
@@ -112,8 +117,10 @@ export async function updateCustomer(req, res, next) {
       body: req.body,
     });
     if (error.statusCode === 400 || error.statusCode === 404 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/kupci/izmena/${req.params.customerId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/kupci/izmena/${req.params.customerId}`
+      );
     }
     next(error);
   }
@@ -128,8 +135,7 @@ export async function deleteCustomer(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID kupca");
-      return res.redirect("/admin/kupci");
+      return flashAndRedirect(req, res, "error", "Neispravan ID kupca", "/admin/kupci");
     }
 
     await customerService.deleteCustomer(customerId);
@@ -139,15 +145,13 @@ export async function deleteCustomer(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kupac je uspešno obrisan");
-    return res.redirect("/admin/kupci");
+    return flashAndRedirect(req, res, "success", "Kupac je uspešno obrisan", "/admin/kupci");
   } catch (error) {
     logError(`[deleteCustomer] Greška pri brisanju kupca`, error, {
       customerId: req.params.customerId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/kupci");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/kupci");
   }
 }
 

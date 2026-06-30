@@ -9,6 +9,7 @@ import {
 import { sha256 } from "./crypto.service.js";
 import { encryptTelephone, encryptAddress } from "../utils/encryption.util.js";
 import { validationError, notFound, conflict } from "../utils/error.util.js";
+import { logError, logWarn, logInfo } from "../utils/logger.util.js";
 
 function validateCustomerPayload(data) {
   if (!data) validationError("data");

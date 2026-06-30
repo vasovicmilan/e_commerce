@@ -1,8 +1,10 @@
+// services/email.service.js
 import ejs from "ejs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { sendEmail } from "../integrations/email/email.provider.js";
 import { mapOrderToPdfModel } from "../mappers/order.mapper.js";
+import { logInfo, logError } from "../utils/logger.util.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,18 +15,41 @@ const BASE_URL = process.env.BASE_URL || "https://www.tophelanke.com";
 const SITE_NAME = process.env.SITE_NAME || "TopHelanke";
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "podrska@tophelanke.com";
 
+/**
+ * Renderuje EJS šablon sa opcijom da se isključi keširanje.
+ */
+import fs from 'fs';
+
 async function renderTemplate(templateName, data) {
   try {
     const templatePath = path.join(TEMPLATES_PATH, `${templateName}.ejs`);
-    return await ejs.renderFile(templatePath, {
-      ...data,
-      BASE_URL,
-      SITE_NAME,
-      SUPPORT_EMAIL,
-      currentYear: new Date().getFullYear(),
-    });
+    logInfo(`[EMAIL] 📄 Rendering template: ${templateName} (${templatePath})`);
+
+    // Učitaj svež sadržaj sa diska
+    const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+    // Renderuj sa pravim opcijama za include
+    const html = ejs.render(
+      templateContent,
+      {
+        ...data,
+        BASE_URL,
+        SITE_NAME,
+        SUPPORT_EMAIL,
+        currentYear: new Date().getFullYear(),
+      },
+      {
+        cache: false,
+        filename: templatePath,   // važno za include
+        root: TEMPLATES_PATH,     // važno za include
+      }
+    );
+
+    // Opcioni log za proveru
+    console.log("OVO OVDE: " + JSON.stringify(html.substring(0, 300)));
+    return html;
   } catch (error) {
-    console.error(`[EMAIL] Template error (${templateName}):`, error.message);
+    logError(`[EMAIL] Template error (${templateName})`, error);
     throw error;
   }
 }
@@ -111,7 +136,7 @@ export async function sendOrderConfirmationEmail(user, rawOrder, pdfBuffer = nul
   const order = mapOrderToPdfModel(rawOrder);
 
   const orderId = rawOrder.id || rawOrder._id;
-  const shortId = orderId ? String(orderId).slice(-6) : '';
+  const shortId = orderId ? String(orderId).slice(-6) : "";
 
   const html = await renderTemplate("order-confirmation", {
     firstName: user.firstName,
@@ -130,6 +155,9 @@ export async function sendOrderConfirmationEmail(user, rawOrder, pdfBuffer = nul
     });
   }
 
+  // Loguj samo deo HTML-a za proveru (ukloni u produkciji)
+  logInfo(`[EMAIL] Order confirmation HTML preview (first 300 chars): ${html}`);
+
   return sendEmail({
     to: user.email,
     subject: `Porudžbina #${shortId} je potvrđena - ${SITE_NAME}`,
@@ -142,7 +170,7 @@ export async function sendOrderStatusUpdateEmail(user, rawOrder) {
   const order = mapOrderToPdfModel(rawOrder);
 
   const orderId = rawOrder.id || rawOrder._id;
-  const shortId = orderId ? String(orderId).slice(-6) : '';
+  const shortId = orderId ? String(orderId).slice(-6) : "";
 
   const html = await renderTemplate("order-status-update", {
     firstName: user.firstName,
@@ -162,7 +190,7 @@ export async function sendOrderCancelledEmail(user, rawOrder) {
   const order = mapOrderToPdfModel(rawOrder);
 
   const orderId = rawOrder.id || rawOrder._id;
-  const shortId = orderId ? String(orderId).slice(-6) : '';
+  const shortId = orderId ? String(orderId).slice(-6) : "";
 
   const html = await renderTemplate("order-cancelled", {
     firstName: user.firstName,
@@ -198,7 +226,7 @@ export async function notifyAdminNewOrder(rawOrder, pdfBuffer = null) {
   const adminEmail = process.env.ADMIN_EMAIL || SUPPORT_EMAIL;
 
   const orderId = rawOrder.id || rawOrder._id;
-  const shortId = orderId ? String(orderId).slice(-6) : '';
+  const shortId = orderId ? String(orderId).slice(-6) : "";
 
   const html = await renderTemplate("admin-new-order", {
     order,
@@ -227,7 +255,7 @@ export async function notifyAdminOrderCancelled(rawOrder) {
   const adminEmail = process.env.ADMIN_EMAIL || SUPPORT_EMAIL;
 
   const orderId = rawOrder.id || rawOrder._id;
-  const shortId = orderId ? String(orderId).slice(-6) : '';
+  const shortId = orderId ? String(orderId).slice(-6) : "";
 
   const html = await renderTemplate("admin-order-cancelled", {
     order,

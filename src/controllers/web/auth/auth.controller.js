@@ -7,7 +7,8 @@ import {
   prepareForgotPasswordFormData,
   prepareResetPasswordFormData,
 } from "../../../presenters/auth/auth.presenter.js";
-import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../utils/flash.util.js";
 
 export function loginForm(req, res) {
   const formData = prepareLoginFormData();
@@ -87,8 +88,11 @@ export async function register(req, res, next) {
         ip: req.ip,
       });
 
-      req.flash("success", `Dobrodošli, ${result.firstName}! Vaš administratorski nalog je kreiran.`);
-      return res.redirect("/admin/dashboard");
+      return flashAndRedirect(
+        req, res, "success",
+        `Dobrodošli, ${result.firstName}! Vaš administratorski nalog je kreiran.`,
+        "/admin/dashboard"
+      );
     }
 
     if (result.provider === "google" && !result.password) {
@@ -110,8 +114,7 @@ export async function register(req, res, next) {
         ip: req.ip,
       });
 
-      req.flash("success", `Dobrodošli, ${result.firstName}!`);
-      return res.redirect("/");
+      return flashAndRedirect(req, res, "success", `Dobrodošli, ${result.firstName}!`, "/");
     }
 
     logInfo(`[register] Novi korisnik registrovan: ${result.email} (ID: ${result.id})`, {
@@ -121,8 +124,11 @@ export async function register(req, res, next) {
       ip: req.ip,
     });
 
-    req.flash("success", "Registracija uspešna! Proverite email za verifikaciju naloga.");
-    return res.redirect("/auth/prijava");
+    return flashAndRedirect(
+      req, res, "success",
+      "Registracija uspešna! Proverite email za verifikaciju naloga.",
+      "/auth/prijava"
+    );
   } catch (error) {
     logError(`[register] Greška pri registraciji`, error, {
       email: req.body?.email,
@@ -182,13 +188,9 @@ export async function login(req, res, next) {
       ip: req.ip,
     });
 
-    req.flash("success", `Dobrodošli, ${user.firstName}!`);
+    const redirectTo = user.roleName === "Administrator" ? "/admin/dashboard" : "/";
 
-    if (user.roleName === "Administrator") {
-      return res.redirect("/admin/dashboard");
-    }
-
-    return res.redirect("/");
+    return flashAndRedirect(req, res, "success", `Dobrodošli, ${user.firstName}!`, redirectTo);
   } catch (error) {
     logError(`[login] Greška pri prijavi`, error, {
       email: req.body?.email,
@@ -241,15 +243,17 @@ export async function verifyAccount(req, res, next) {
       ip: req.ip,
     });
 
-    req.flash("success", "Nalog je uspešno verifikovan! Sada se možete prijaviti.");
-    return res.redirect("/auth/prijava");
+    return flashAndRedirect(
+      req, res, "success",
+      "Nalog je uspešno verifikovan! Sada se možete prijaviti.",
+      "/auth/prijava"
+    );
   } catch (error) {
     logError(`[verifyAccount] Greška pri verifikaciji naloga`, error, {
       token: req.params?.token?.substring(0, 8) + '...',
       ip: req.ip,
     });
-    req.flash("error", error.message);
-    return res.redirect("/auth/prijava");
+    return flashAndRedirect(req, res, "error", error.message, "/auth/prijava");
   }
 }
 
@@ -278,31 +282,17 @@ export async function requestPasswordReset(req, res, next) {
       ip: req.ip,
     });
 
-    req.flash("success", "Ako email postoji, poslat je link za reset lozinke.");
-    req.session.save((err) => {
-      if (err) {
-        logError(`[requestPasswordReset] Greška pri čuvanju sesije`, err, {
-          email: req.body.email,
-          ip: req.ip,
-        });
-      }
-      res.redirect("/auth/prijava");
-    });
+    return flashAndRedirect(
+      req, res, "success",
+      "Ako email postoji, poslat je link za reset lozinke.",
+      "/auth/prijava"
+    );
   } catch (error) {
     logError(`[requestPasswordReset] Greška pri zahtevu za reset lozinke`, error, {
       email: req.body?.email,
       ip: req.ip,
     });
-    req.flash("error", error.message);
-    req.session.save((err) => {
-      if (err) {
-        logError(`[requestPasswordReset] Greška pri čuvanju sesije (catch)`, err, {
-          email: req.body?.email,
-          ip: req.ip,
-        });
-      }
-      res.redirect("/auth/zaboravljena-lozinka");
-    });
+    return flashAndRedirect(req, res, "error", error.message, "/auth/zaboravljena-lozinka");
   }
 }
 
@@ -331,8 +321,11 @@ export async function resetPassword(req, res, next) {
       ip: req.ip,
     });
 
-    req.flash("success", "Lozinka je uspešno promenjena! Sada se možete prijaviti.");
-    return res.redirect("/auth/prijava");
+    return flashAndRedirect(
+      req, res, "success",
+      "Lozinka je uspešno promenjena! Sada se možete prijaviti.",
+      "/auth/prijava"
+    );
   } catch (error) {
     logError(`[resetPassword] Greška pri resetovanju lozinke`, error, {
       token: req.body?.token?.substring(0, 8) + '...',
@@ -381,8 +374,7 @@ export async function googleCallback(req, res, next) {
       logWarn(`[googleCallback] Nedostaje autorizacioni kod`, {
         ip: req.ip,
       });
-      req.flash("error", "Google autentifikacija nije uspela.");
-      return res.redirect("/auth/prijava");
+      return flashAndRedirect(req, res, "error", "Google autentifikacija nije uspela.", "/auth/prijava");
     }
 
     const guestCart = req.session.cart || [];
@@ -409,15 +401,17 @@ export async function googleCallback(req, res, next) {
       ip: req.ip,
     });
 
-    req.flash("success", `Dobrodošli, ${result.user.firstName}!`);
-    return res.redirect("/");
+    return flashAndRedirect(req, res, "success", `Dobrodošli, ${result.user.firstName}!`, "/");
   } catch (error) {
     logError(`[googleCallback] Greška pri Google autentifikaciji`, error, {
       code: req.query?.code?.substring(0, 8) + '...',
       ip: req.ip,
     });
-    req.flash("error", "Google autentifikacija nije uspela: " + error.message);
-    return res.redirect("/auth/prijava");
+    return flashAndRedirect(
+      req, res, "error",
+      "Google autentifikacija nije uspela: " + error.message,
+      "/auth/prijava"
+    );
   }
 }
 

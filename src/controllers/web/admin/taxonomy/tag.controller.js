@@ -4,7 +4,8 @@ import {
   prepareTagDetailsData,
   prepareTagFormData,
 } from "../../../../presenters/admin/tag.presenter.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 // ============================================================
 //  POMOĆNA FUNKCIJA ZA SANITIZACIJU
@@ -13,21 +14,18 @@ import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";  
 function sanitizeTagData(data) {
   const sanitized = { ...data };
 
-  // isIndexable: ako je niz (zbog checkboxa), uzmi da li sadrži '1'
   if (Array.isArray(sanitized.isIndexable)) {
     sanitized.isIndexable = sanitized.isIndexable.includes('1');
   } else if (sanitized.isIndexable !== undefined) {
     sanitized.isIndexable = Boolean(sanitized.isIndexable);
   }
 
-  // meta.isActive: isto kao gore
   if (sanitized.meta && Array.isArray(sanitized.meta.isActive)) {
     sanitized.meta.isActive = sanitized.meta.isActive.includes('1');
   } else if (sanitized.meta && sanitized.meta.isActive !== undefined) {
     sanitized.meta.isActive = Boolean(sanitized.meta.isActive);
   }
 
-  // meta.priority
   if (sanitized.meta && sanitized.meta.priority !== undefined) {
     sanitized.meta.priority = parseInt(sanitized.meta.priority, 10) || 0;
   }
@@ -136,7 +134,6 @@ export async function createTag(req, res, next) {
       });
     }
 
-    // Pripremi podatke i sanitizuj
     const data = { ...req.body };
     const sanitizedData = sanitizeTagData(data);
 
@@ -148,15 +145,17 @@ export async function createTag(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Tag je uspešno kreiran");
-    return res.redirect(`/admin/tagovi/detalji/${tag.id}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Tag je uspešno kreiran",
+      `/admin/tagovi/detalji/${tag.id}`
+    );
   } catch (error) {
     logError(`[createTag] Greška pri kreiranju taga`, error, {
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 409) {
-      req.flash("error", error.message);
       const formData = prepareTagFormData();
       return res.render("admin/_form", {
         pageTitle: "Novi tag",
@@ -168,6 +167,7 @@ export async function createTag(req, res, next) {
   }
 }
 
+// FIX M5: validation errors now re-render with formData (was flash+redirect, losing input)
 export async function updateTag(req, res, next) {
   try {
     const { tagId } = req.params;
@@ -186,7 +186,6 @@ export async function updateTag(req, res, next) {
       });
     }
 
-    // Pripremi podatke i sanitizuj
     const data = { ...req.body };
     const sanitizedData = sanitizeTagData(data);
 
@@ -198,8 +197,11 @@ export async function updateTag(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Tag je uspešno ažuriran");
-    return res.redirect(`/admin/tagovi/detalji/${tagId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Tag je uspešno ažuriran",
+      `/admin/tagovi/detalji/${tagId}`
+    );
   } catch (error) {
     logError(`[updateTag] Greška pri ažuriranju taga`, error, {
       tagId: req.params.tagId,
@@ -207,8 +209,10 @@ export async function updateTag(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 404 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/tagovi/izmena/${req.params.tagId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/tagovi/izmena/${req.params.tagId}`
+      );
     }
     next(error);
   }
@@ -223,8 +227,7 @@ export async function deleteTag(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID taga");
-      return res.redirect("/admin/tagovi");
+      return flashAndRedirect(req, res, "error", "Neispravan ID taga", "/admin/tagovi");
     }
 
     await tagService.deleteTag(tagId);
@@ -234,15 +237,13 @@ export async function deleteTag(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Tag je uspešno obrisan");
-    return res.redirect("/admin/tagovi");
+    return flashAndRedirect(req, res, "success", "Tag je uspešno obrisan", "/admin/tagovi");
   } catch (error) {
     logError(`[deleteTag] Greška pri brisanju taga`, error, {
       tagId: req.params.tagId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/tagovi");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/tagovi");
   }
 }
 

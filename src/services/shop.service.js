@@ -13,6 +13,9 @@ import {
   badRequest,
 } from "../utils/error.util.js";
 
+import eventEmitter from "../events/event.emitter.js";
+import { logError, logWarn, logInfo } from "../utils/logger.util.js";
+
 import mongoose from "mongoose";
 
 const DEFAULT_SHIPPING_PRICE = Number(process.env.DEFAULT_SHIPPING_PRICE || 540);
@@ -465,14 +468,6 @@ export async function createCheckoutTemporaryOrder(data, { user, session: expres
         expressSession.save((err) => (err ? reject(err) : resolve()));
       });
     }
- 
-    // ── 9. Emit event (always after commit) ───────────────────────────────────
-    eventEmitter.emit("temporary-order:created", {
-      orderId:   result.id,
-      email:     buyerInfo.email,
-      firstName: buyerInfo.firstName,
-      token:     result.verificationToken,
-    });
  
     return result;
   } catch (error) {

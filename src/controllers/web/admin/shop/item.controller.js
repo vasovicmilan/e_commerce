@@ -6,7 +6,8 @@ import {
   prepareItemDetailsData,
   prepareItemFormData,
 } from "../../../../presenters/admin/item.presenter.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 // ============================================================
 //  POMOĆNA FUNKCIJA ZA PARSIRANJE MERA
@@ -207,15 +208,17 @@ export async function createItem(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Artikal je uspešno kreiran.");
-    return res.redirect(`/admin/artikli/detalji/${item.id}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Artikal je uspešno kreiran.",
+      `/admin/artikli/detalji/${item.id}`
+    );
   } catch (error) {
     logError(`[createItem] Greška pri kreiranju artikla`, error, {
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 409) {
-      req.flash("error", error.message);
       const categoriesResult = await categoryService.listCategories({ domain: 'item', limit: 1000, page: 1 });
       const tagsResult = await tagService.listTags({ domain: 'item', limit: 1000, page: 1 });
       const formData = prepareItemFormData(null, categoriesResult.data || [], tagsResult.data || []);
@@ -296,8 +299,11 @@ export async function updateItem(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Artikal je uspešno ažuriran");
-    return res.redirect(`/admin/artikli/detalji/${itemId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Artikal je uspešno ažuriran",
+      `/admin/artikli/detalji/${itemId}`
+    );
   } catch (error) {
     logError(`[updateItem] Greška pri ažuriranju artikla`, error, {
       itemId: req.params.itemId,
@@ -305,8 +311,10 @@ export async function updateItem(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 404 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/artikli/izmena/${req.params.itemId}`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/artikli/izmena/${req.params.itemId}`
+      );
     }
     next(error);
   }
@@ -360,8 +368,11 @@ export async function addVariation(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/artikli/${itemId}/varijacije`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/artikli/${itemId}/varijacije`
+      );
     }
 
     await itemService.addVariation(itemId, req.body);
@@ -373,8 +384,11 @@ export async function addVariation(req, res, next) {
       color: req.body.color,
     });
 
-    req.flash("success", "Varijacija je uspešno dodata");
-    return res.redirect(`/admin/artikli/${itemId}/varijacije`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Varijacija je uspešno dodata",
+      `/admin/artikli/${itemId}/varijacije`
+    );
   } catch (error) {
     logError(`[addVariation] Greška pri dodavanju varijacije`, error, {
       itemId: req.params.itemId,
@@ -382,8 +396,10 @@ export async function addVariation(req, res, next) {
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 409) {
-      req.flash("error", error.message);
-      return res.redirect(`/admin/artikli/${req.params.itemId}/varijacije`);
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/artikli/${req.params.itemId}/varijacije`
+      );
     }
     next(error);
   }
@@ -413,8 +429,11 @@ export async function updateVariation(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/artikli/${itemId}/varijacije`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/artikli/${itemId}/varijacije`
+      );
     }
 
     await itemService.updateVariation(itemId, variationId, req.body);
@@ -425,8 +444,11 @@ export async function updateVariation(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Varijacija je uspešno ažurirana");
-    return res.redirect(`/admin/artikli/${itemId}/varijacije`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Varijacija je uspešno ažurirana",
+      `/admin/artikli/${itemId}/varijacije`
+    );
   } catch (error) {
     logError(`[updateVariation] Greška pri ažuriranju varijacije`, error, {
       itemId: req.params.itemId,
@@ -434,8 +456,10 @@ export async function updateVariation(req, res, next) {
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/artikli/${req.params.itemId}/varijacije`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/artikli/${req.params.itemId}/varijacije`
+    );
   }
 }
 
@@ -455,16 +479,21 @@ export async function removeVariation(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Varijacija je uspešno obrisana");
-    return res.redirect(`/admin/artikli/${itemId}/varijacije`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Varijacija je uspešno obrisana",
+      `/admin/artikli/${itemId}/varijacije`
+    );
   } catch (error) {
     logError(`[removeVariation] Greška pri brisanju varijacije`, error, {
       itemId: req.params.itemId,
       variationId: req.params.variationId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/artikli/${req.params.itemId}/varijacije`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/artikli/${req.params.itemId}/varijacije`
+    );
   }
 }
 
@@ -501,11 +530,10 @@ export async function updateSeo(req, res, next) {
         userId: req.session?.user?.id || req.session?.user?._id,
       });
       const errorMessages = Object.values(req.validationErrors).flat().join(", ");
-      req.flash("error", errorMessages);
-      return res.redirect(`/admin/artikli/${itemId}/seo`);
+      return flashAndRedirect(req, res, "error", errorMessages, `/admin/artikli/${itemId}/seo`);
     }
 
-    // 🔥 Samo prosledi req.body – sve ostalo rade validator i repozitorijum
+    // Samo prosledi req.body – sve ostalo rade validator i repozitorijum
     await itemService.updateItemSeo(itemId, req.body);
 
     logInfo(`[updateSeo] SEO za artikal #${itemId} uspešno ažuriran`, {
@@ -513,16 +541,22 @@ export async function updateSeo(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "SEO podaci su uspešno ažurirani");
-    return res.redirect(`/admin/artikli/detalji/${itemId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "SEO podaci su uspešno ažurirani",
+      `/admin/artikli/detalji/${itemId}`
+    );
   } catch (error) {
     logError(`[updateSeo] Greška pri ažuriranju SEO podataka`, error, {
       itemId: req.params.itemId,
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message || "Došlo je do greške prilikom ažuriranja SEO podataka.");
-    return res.redirect(`/admin/artikli/${req.params.itemId}/seo`);
+    return flashAndRedirect(
+      req, res, "error",
+      error.message || "Došlo je do greške prilikom ažuriranja SEO podataka.",
+      `/admin/artikli/${req.params.itemId}/seo`
+    );
   }
 }
 
@@ -540,8 +574,11 @@ export async function updateStatus(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/artikli/detalji/${itemId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/artikli/detalji/${itemId}`
+      );
     }
 
     await itemService.updateItemStatus(itemId, status);
@@ -552,16 +589,21 @@ export async function updateStatus(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Status je uspešno promenjen");
-    return res.redirect(`/admin/artikli/detalji/${itemId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Status je uspešno promenjen",
+      `/admin/artikli/detalji/${itemId}`
+    );
   } catch (error) {
     logError(`[updateStatus] Greška pri promeni statusa artikla`, error, {
       itemId: req.params.itemId,
       requestedStatus: req.body.status,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/artikli/detalji/${req.params.itemId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/artikli/detalji/${req.params.itemId}`
+    );
   }
 }
 
@@ -578,8 +620,7 @@ export async function deleteItem(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID artikla");
-      return res.redirect("/admin/artikli");
+      return flashAndRedirect(req, res, "error", "Neispravan ID artikla", "/admin/artikli");
     }
 
     await itemService.deleteItem(itemId);
@@ -589,15 +630,13 @@ export async function deleteItem(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Artikal je uspešno obrisan");
-    return res.redirect("/admin/artikli");
+    return flashAndRedirect(req, res, "success", "Artikal je uspešno obrisan", "/admin/artikli");
   } catch (error) {
     logError(`[deleteItem] Greška pri brisanju artikla`, error, {
       itemId: req.params.itemId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/artikli");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/artikli");
   }
 }
 

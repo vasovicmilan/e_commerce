@@ -5,7 +5,8 @@ import {
   prepareCouponDetailsData,
   prepareCouponFormData,
 } from "../../../../presenters/admin/coupon.presenter.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 async function loadPartners() {
   return getPartners({ limit: 200 });
@@ -95,6 +96,10 @@ export async function newCouponForm(req, res, next) {
   }
 }
 
+// NOTE: createCoupon did NOT check req.validationErrors in the original file
+// (validation is presumably enforced entirely inside couponService.createCoupon,
+// which throws ValidationError on bad input). Kept that behavior unchanged —
+// only the error-rendering / success-redirect plumbing is touched.
 export async function createCoupon(req, res, next) {
   try {
     const result = await couponService.createCoupon(req.body);
@@ -104,8 +109,11 @@ export async function createCoupon(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kupon je uspešno kreiran");
-    res.redirect(`/admin/kuponi/detalji/${result.id}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Kupon je uspešno kreiran",
+      `/admin/kuponi/detalji/${result.id}`
+    );
   } catch (error) {
     logError(`[createCoupon] Greška pri kreiranju kupona`, error, {
       body: req.body,
@@ -113,12 +121,11 @@ export async function createCoupon(req, res, next) {
     });
 
     if (error.name === 'ValidationError' || error.statusCode === 409) {
-      req.flash("error", error.message);
       const partners = await loadPartners();
       const formData = prepareCouponFormData(null, partners);
       formData.errors = error.errors || { general: error.message };
       formData.formData = req.body;
-      res.status(400).render("admin/_form", {
+      return res.status(400).render("admin/_form", {
         pageTitle: "Novi kupon",
         pageDescription: "Kreiraj novi kupon za popust",
         data: formData,
@@ -139,8 +146,11 @@ export async function updateCoupon(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kupon je uspešno ažuriran");
-    res.redirect(`/admin/kuponi/detalji/${result.id}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Kupon je uspešno ažuriran",
+      `/admin/kuponi/detalji/${result.id}`
+    );
   } catch (error) {
     logError(`[updateCoupon] Greška pri ažuriranju kupona`, error, {
       couponId: req.params.couponId,
@@ -149,13 +159,12 @@ export async function updateCoupon(req, res, next) {
     });
 
     if (error.name === 'ValidationError' || error.statusCode === 404 || error.statusCode === 409) {
-      req.flash("error", error.message);
       const partners = await loadPartners();
       const coupon = await couponService.getCouponForEdit(couponId);
       const formData = prepareCouponFormData(coupon, partners);
       formData.errors = error.errors || { general: error.message };
       formData.formData = req.body;
-      res.status(400).render("admin/_form", {
+      return res.status(400).render("admin/_form", {
         pageTitle: `Izmena - ${coupon.osnovno.kod}`,
         pageDescription: `Popust: ${coupon.osnovno.popust}`,
         data: formData,
@@ -175,8 +184,7 @@ export async function deleteCoupon(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID kupona");
-      return res.redirect("/admin/kuponi");
+      return flashAndRedirect(req, res, "error", "Neispravan ID kupona", "/admin/kuponi");
     }
 
     await couponService.deleteCoupon(couponId);
@@ -186,15 +194,13 @@ export async function deleteCoupon(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kupon je uspešno obrisan");
-    return res.redirect("/admin/kuponi");
+    return flashAndRedirect(req, res, "success", "Kupon je uspešno obrisan", "/admin/kuponi");
   } catch (error) {
     logError(`[deleteCoupon] Greška pri brisanju kupona`, error, {
       couponId: req.params.couponId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/kuponi");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/kuponi");
   }
 }
 

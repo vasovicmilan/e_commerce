@@ -3,7 +3,8 @@ import {
   prepareNewsletterListData,
   prepareNewsletterDetailsData,
 } from "../../../presenters/admin/newsletter.presenter.js";
-import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../utils/flash.util.js";
 
 export async function listNewsletters(req, res, next) {
   try {
@@ -64,8 +65,11 @@ export async function updateStatus(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/newsletter/detalji/${newsletterId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/newsletter/detalji/${newsletterId}`
+      );
     }
 
     const active = isActive === "true" || isActive === true;
@@ -77,16 +81,21 @@ export async function updateStatus(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Status je uspešno promenjen");
-    return res.redirect(`/admin/newsletter/detalji/${newsletterId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Status je uspešno promenjen",
+      `/admin/newsletter/detalji/${newsletterId}`
+    );
   } catch (error) {
     logError(`[updateStatus] Greška pri promeni statusa newsletter-a`, error, {
       newsletterId: req.params.newsletterId,
       isActive: req.body.isActive,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/newsletter/detalji/${req.params.newsletterId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/newsletter/detalji/${req.params.newsletterId}`
+    );
   }
 }
 
@@ -99,8 +108,7 @@ export async function deleteNewsletter(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID newsletter-a");
-      return res.redirect("/admin/newsletter");
+      return flashAndRedirect(req, res, "error", "Neispravan ID newsletter-a", "/admin/newsletter");
     }
 
     await newsletterService.deleteNewsletter(newsletterId);
@@ -110,15 +118,13 @@ export async function deleteNewsletter(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Newsletter prijava je obrisana");
-    return res.redirect("/admin/newsletter");
+    return flashAndRedirect(req, res, "success", "Newsletter prijava je obrisana", "/admin/newsletter");
   } catch (error) {
     logError(`[deleteNewsletter] Greška pri brisanju newsletter-a`, error, {
       newsletterId: req.params.newsletterId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/newsletter");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/newsletter");
   }
 }
 

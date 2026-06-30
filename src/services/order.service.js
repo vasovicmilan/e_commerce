@@ -26,6 +26,8 @@ import {
   forbidden,
 } from "../utils/error.util.js";
 
+import { logError, logWarn, logInfo } from "../utils/logger.util.js";
+
 export async function listOrders({
   search,
   buyerId,

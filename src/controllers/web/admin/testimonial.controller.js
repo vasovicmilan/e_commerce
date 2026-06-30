@@ -3,7 +3,8 @@ import {
   prepareTestimonialListData,
   prepareTestimonialDetailsData,
 } from "../../../presenters/admin/testimonial.presenter.js";
-import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../utils/flash.util.js";
 
 export async function listTestimonials(req, res, next) {
   try {
@@ -58,6 +59,12 @@ export async function testimonialDetails(req, res, next) {
   }
 }
 
+// NOTE: testimonial.validator.js's validateTestimonialApprove requires
+// `approvedBy` in the request body, but this controller pulls it from the
+// session and never checks req.validationErrors. This is a pre-existing
+// inconsistency (the validator is effectively dead code for this route) and
+// is outside the scope of the flash refactor — flagged separately, not fixed
+// here to avoid silently changing authorization semantics.
 export async function approveTestimonial(req, res, next) {
   try {
     const { testimonialId } = req.params;
@@ -71,15 +78,20 @@ export async function approveTestimonial(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Testimonial je uspešno odobren");
-    return res.redirect(`/admin/testimoniali/detalji/${testimonialId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Testimonial je uspešno odobren",
+      `/admin/testimoniali/detalji/${testimonialId}`
+    );
   } catch (error) {
     logError(`[approveTestimonial] Greška pri odobravanju testimoniala`, error, {
       testimonialId: req.params.testimonialId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/testimoniali/detalji/${req.params.testimonialId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/testimoniali/detalji/${req.params.testimonialId}`
+    );
   }
 }
 
@@ -93,8 +105,11 @@ export async function toggleFeatured(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/testimoniali/detalji/${testimonialId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/testimoniali/detalji/${testimonialId}`
+      );
     }
 
     const featuredStatus = isFeatured === "true" || isFeatured === true || isFeatured === "1";
@@ -106,16 +121,21 @@ export async function toggleFeatured(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Status istaknutog je promenjen");
-    return res.redirect(`/admin/testimoniali/detalji/${testimonialId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Status istaknutog je promenjen",
+      `/admin/testimoniali/detalji/${testimonialId}`
+    );
   } catch (error) {
     logError(`[toggleFeatured] Greška pri promeni statusa istaknutog`, error, {
       testimonialId: req.params.testimonialId,
       isFeatured: req.body.isFeatured,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/testimoniali/detalji/${req.params.testimonialId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/testimoniali/detalji/${req.params.testimonialId}`
+    );
   }
 }
 
@@ -128,8 +148,11 @@ export async function updateTestimonial(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", Object.values(req.validationErrors).join(", "));
-      return res.redirect(`/admin/testimoniali/detalji/${testimonialId}`);
+      return flashAndRedirect(
+        req, res, "error",
+        Object.values(req.validationErrors).join(", "),
+        `/admin/testimoniali/detalji/${testimonialId}`
+      );
     }
 
     await testimonialService.updateTestimonial(testimonialId, req.body);
@@ -140,16 +163,21 @@ export async function updateTestimonial(req, res, next) {
       updatedFields: Object.keys(req.body),
     });
 
-    req.flash("success", "Testimonial je ažuriran");
-    return res.redirect(`/admin/testimoniali/detalji/${testimonialId}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Testimonial je ažuriran",
+      `/admin/testimoniali/detalji/${testimonialId}`
+    );
   } catch (error) {
     logError(`[updateTestimonial] Greška pri ažuriranju testimoniala`, error, {
       testimonialId: req.params.testimonialId,
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect(`/admin/testimoniali/detalji/${req.params.testimonialId}`);
+    return flashAndRedirect(
+      req, res, "error", error.message,
+      `/admin/testimoniali/detalji/${req.params.testimonialId}`
+    );
   }
 }
 
@@ -162,8 +190,7 @@ export async function deleteTestimonial(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID");
-      return res.redirect("/admin/testimoniali");
+      return flashAndRedirect(req, res, "error", "Neispravan ID", "/admin/testimoniali");
     }
 
     await testimonialService.deleteTestimonial(testimonialId);
@@ -173,15 +200,13 @@ export async function deleteTestimonial(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Testimonial je obrisan");
-    return res.redirect("/admin/testimoniali");
+    return flashAndRedirect(req, res, "success", "Testimonial je obrisan", "/admin/testimoniali");
   } catch (error) {
     logError(`[deleteTestimonial] Greška pri brisanju testimoniala`, error, {
       testimonialId: req.params.testimonialId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/testimoniali");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/testimoniali");
   }
 }
 

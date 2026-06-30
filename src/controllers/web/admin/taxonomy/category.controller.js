@@ -4,7 +4,8 @@ import {
   prepareCategoryDetailsData,
   prepareCategoryFormData,
 } from "../../../../presenters/admin/category.presenter.js";
-import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";   // ← dodato
+import { logError, logWarn, logInfo } from "../../../../utils/logger.util.js";
+import { flashAndRedirect } from "../../../../utils/flash.util.js";
 
 // ============================================================
 //  POMOĆNA FUNKCIJA ZA SANITIZACIJU
@@ -139,7 +140,6 @@ export async function createCategory(req, res, next) {
 
     const data = { ...req.body };
 
-    // ISPRAVKA: koristi featureImage, ne categoryImage
     if (req.uploadedFile) {
       data.featureImage = {
         img: req.uploadedFile.img,
@@ -155,15 +155,17 @@ export async function createCategory(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kategorija je uspešno kreirana");
-    return res.redirect(`/admin/kategorije/detalji/${category.id}`);
+    return flashAndRedirect(
+      req, res, "success",
+      "Kategorija je uspešno kreirana",
+      `/admin/kategorije/detalji/${category.id}`
+    );
   } catch (error) {
     logError(`[createCategory] Greška pri kreiranju kategorije`, error, {
       body: req.body,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
     if (error.statusCode === 400 || error.statusCode === 409) {
-      req.flash("error", error.message);
       const formData = prepareCategoryFormData();
       return res.render("admin/_form", {
         pageTitle: "Nova kategorija",
@@ -175,44 +177,67 @@ export async function createCategory(req, res, next) {
   }
 }
 
+// FIX M5: was rendering a different/nonexistent template ("admin/categories/edit")
+// and lost pageDescription. Now consistent with createCategory's pattern:
+// validation errors → re-render "admin/_form" with formData preserved;
+// business errors → flashAndRedirect to the edit page.
 export async function updateCategory(req, res, next) {
-  const { categoryId } = req.params;
- 
-  // Validation errors → re-render with form data preserved
-  if (req.validationErrors) {
-    try {
+  try {
+    const { categoryId } = req.params;
+
+    if (req.validationErrors) {
+      logWarn(`[updateCategory] Validacione greške za categoryId=${categoryId}`, {
+        validationErrors: req.validationErrors,
+        userId: req.session?.user?.id || req.session?.user?._id,
+      });
       const category = await categoryService.getCategoryById(categoryId);
       const formData = prepareCategoryFormData(category);
-      return res.render("admin/categories/edit", {
-        pageTitle: "Izmena kategorije",
-        data: {
-          ...formData,
-          errors:   req.validationErrors,
-          formData: req.body,          // ← preserve user's input
-        },
+
+      return res.render("admin/_form", {
+        pageTitle: `Izmena - ${category.osnovno.naziv}`,
+        pageDescription: category.osnovno.kratakOpis || category.osnovno.naziv,
+        data: { ...formData, errors: req.validationErrors, formData: req.body },
       });
-    } catch (innerError) {
-      return next(innerError);
     }
-  }
- 
-  try {
-    await categoryService.updateCategory(categoryId, req.body, req.file);
-    req.flash("success", "Kategorija je uspešno izmenjena");
-    return res.redirect(`/admin/kategorije/izmena/${categoryId}`);
+
+    const data = { ...req.body };
+
+    if (req.uploadedFile) {
+      data.featureImage = {
+        img: req.uploadedFile.img,
+        imgDesc: req.body.categoryImageDesc || req.uploadedFile.imgDesc || "",
+      };
+    }
+
+    const sanitizedData = sanitizeCategoryData(data);
+    await categoryService.updateCategory(categoryId, sanitizedData);
+
+    logInfo(`[updateCategory] Kategorija #${categoryId} uspešno ažurirana`, {
+      categoryId,
+      adminId: req.session?.user?.id || req.session?.user?._id,
+    });
+
+    return flashAndRedirect(
+      req, res, "success",
+      "Kategorija je uspešno izmenjena",
+      `/admin/kategorije/detalji/${categoryId}`
+    );
   } catch (error) {
-    if (
-      error.statusCode === 400 ||
-      error.statusCode === 404 ||
-      error.statusCode === 409
-    ) {
-      // Business error → flash + redirect (user already left the form context)
-      req.flash("error", error.message);
-      return res.redirect(`/admin/kategorije/izmena/${categoryId}`);
+    logError(`[updateCategory] Greška pri ažuriranju kategorije`, error, {
+      categoryId: req.params.categoryId,
+      body: req.body,
+      userId: req.session?.user?.id || req.session?.user?._id,
+    });
+    if (error.statusCode === 400 || error.statusCode === 404 || error.statusCode === 409) {
+      return flashAndRedirect(
+        req, res, "error", error.message,
+        `/admin/kategorije/izmena/${req.params.categoryId}`
+      );
     }
     next(error);
   }
 }
+
 export async function deleteCategory(req, res, next) {
   try {
     const { categoryId } = req.params;
@@ -222,8 +247,7 @@ export async function deleteCategory(req, res, next) {
         validationErrors: req.validationErrors,
         userId: req.session?.user?.id || req.session?.user?._id,
       });
-      req.flash("error", "Neispravan ID kategorije");
-      return res.redirect("/admin/kategorije");
+      return flashAndRedirect(req, res, "error", "Neispravan ID kategorije", "/admin/kategorije");
     }
 
     await categoryService.deleteCategory(categoryId);
@@ -233,15 +257,13 @@ export async function deleteCategory(req, res, next) {
       adminId: req.session?.user?.id || req.session?.user?._id,
     });
 
-    req.flash("success", "Kategorija je uspešno obrisana");
-    return res.redirect("/admin/kategorije");
+    return flashAndRedirect(req, res, "success", "Kategorija je uspešno obrisana", "/admin/kategorije");
   } catch (error) {
     logError(`[deleteCategory] Greška pri brisanju kategorije`, error, {
       categoryId: req.params.categoryId,
       userId: req.session?.user?.id || req.session?.user?._id,
     });
-    req.flash("error", error.message);
-    return res.redirect("/admin/kategorije");
+    return flashAndRedirect(req, res, "error", error.message, "/admin/kategorije");
   }
 }
 
