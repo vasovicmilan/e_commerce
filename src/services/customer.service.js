@@ -50,50 +50,40 @@ export async function findCustomerByAddress(plainAddress) {
   return customerRepo.findCustomerByAddressHash(hash);
 }
 
-export async function resolveCustomerForOrder(data, { session } = {}) {
-  validateCustomerPayload(data);
-
-  const email = String(data.email).toLowerCase().trim();
-
-  const user = await userService.findUserByEmail(email);
-  if (user) {
-    return {
-      customer: user,
-      created: false,
-      extended: false,
-      type: "user",
-    };
-  }
-
-  let customer = await customerRepo.findCustomerByEmail(email, null, session);
-
+export async function resolveCustomerForOrder(
+  { firstName, lastName, email, acceptance = false },
+  { session = null } = {}
+) {
+  if (!email) validationError("email");
+ 
+  // Normalise
+  const normalizedEmail = email.toLowerCase().trim();
+ 
+  // Try to find an existing Customer with this email
+  let customer = await customerRepo.findCustomerByEmail(
+    normalizedEmail,
+    null,
+    session    // ← session forwarded (M4 fix)
+  );
+ 
   if (customer) {
-    return {
-      customer,
-      created: false,
-      extended: false,
-      type: "customer",
-    };
+    logInfo("Existing customer found for order", { customerId: customer._id });
+    return { customer, created: false };
   }
-
-  const payload = {
-    email,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    telephoneNumbers: [],
-    addresses: [],
-    orders: [],
-    acceptance: data.acceptance ?? true,
-  };
-
-  const newCustomer = await customerRepo.createCustomer(payload, session);
-
-  return {
-    customer: newCustomer.toObject ? newCustomer.toObject() : newCustomer,
-    created: true,
-    extended: false,
-    type: "customer",
-  };
+ 
+  // Create new Customer
+  customer = await customerRepo.createCustomer(
+    {
+      firstName: firstName.trim(),
+      lastName:  lastName.trim(),
+      email:     normalizedEmail,
+      acceptance,
+    },
+    session    // ← session forwarded (M4 fix)
+  );
+ 
+  logInfo("New customer created for order", { customerId: customer._id });
+  return { customer, created: true };
 }
 
 export async function ensureCustomerData(

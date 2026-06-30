@@ -510,3 +510,30 @@ body.overflow-hidden {
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+/* ============================================================
+   AKTIVNI TAB U PROFILU – KONTRAST
+   ============================================================ */
+
+.list-group-item.active {
+  color: #ffffff !important;
+  background-color: var(--brand-pink) !important;
+  border-color: var(--brand-pink) !important;
+}
+
+.list-group-item.active i,
+.list-group-item.active .bi {
+  color: #ffffff !important;
+}
+
+/* Dodatna sigurnost – ako se koristi .list-group-item-action zajedno sa .active */
+.list-group-item-action.active {
+  color: #ffffff !important;
+  background-color: var(--brand-pink) !important;
+  border-color: var(--brand-pink) !important;
+}
+
+.list-group-item-action.active i,
+.list-group-item-action.active .bi {
+  color: #ffffff !important;
+}

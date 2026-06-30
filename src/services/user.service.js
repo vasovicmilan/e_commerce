@@ -549,107 +549,132 @@ export async function ensureUserData(
 
 export async function migrateCustomerToUser({
   customer,
-  orderId,
+  orderId = null,
   autoCreateAccount = false,
   session: existingSession = null,
 }) {
-  if (!customer?.email) validationError("email");
-
-  const email = customer.email.toLowerCase().trim();
   const ownsSession = !existingSession;
-  const session = existingSession || await mongoose.startSession();
-
+  const session = existingSession || (await mongoose.startSession());
+ 
   try {
     if (ownsSession) session.startTransaction();
-
-    let user = await userRepo.findUserByEmail(email, null, session);
-
-    if (user) {
-      // Ensure user has these telephones/addresses/order (using raw encrypted data)
-      await ensureUserData(user._id, {
-        telephones: customer.telephoneNumbers || [],
-        addresses: customer.addresses || [],
-        orderId,
-      }, { session });
-
-      if (ownsSession) await session.commitTransaction();
-
+ 
+    const email = customer.email.toLowerCase().trim();
+ 
+    // ── Check if a User with this email already exists ──────────────────────
+    let existingUser = await userRepo.findUserByEmail(email, null, session);
+ 
+    if (existingUser) {
+      // Merge encrypted phones/addresses into the existing User and add orderId
+      await ensureUserData(
+        existingUser._id,
+        {
+          telephones: customer.telephoneNumbers || [],
+          addresses:  customer.addresses        || [],
+          orderId,
+        },
+        { session }
+      );
+ 
+      if (ownsSession) {
+        await session.commitTransaction();
+        // Emit only when we own the session; caller emits otherwise
+        eventEmitter.emit("user:migrated", {
+          email:     existingUser.email,
+          firstName: existingUser.firstName,
+          userId:    existingUser._id.toString(),
+          migrated:  false,
+          extended:  true,
+        });
+      }
+ 
       return {
-        userId: user._id.toString(),
-        migrated: false,
-        extended: true,
-        customerId: customer._id?.toString(),
+        userId:         existingUser._id.toString(),
+        email:          existingUser.email,
+        firstName:      existingUser.firstName,
+        migrated:       false,
+        extended:       true,
         accountCreated: false,
-        email: user.email,
-        firstName: user.firstName,
+        confirmToken:   null,
+        resetToken:     null,
       };
     }
-
+ 
+    // ── No existing User — create one if autoCreateAccount is true ──────────
     if (!autoCreateAccount) {
       if (ownsSession) await session.commitTransaction();
-      return { userId: null, migrated: false, accountCreated: false };
+      return {
+        userId:         null,
+        migrated:       false,
+        extended:       false,
+        accountCreated: false,
+        confirmToken:   null,
+        resetToken:     null,
+      };
     }
-
-    // ✅ Merge the new order ID into the orders list
-    const orders = customer.orders || [];
-    if (orderId && !orders.some(id => String(id) === String(orderId))) {
+ 
+    // Merge orderId into the customer's existing orders array
+    const orders = [...(customer.orders || [])];
+    if (orderId && !orders.some((id) => String(id) === String(orderId))) {
       orders.push(orderId);
     }
-
-    // Create new user – use encrypted data directly
-    const hashedPassword = await hashPassword(process.env.DEFAULT_PASSWORD || "Changeme123!");
-    const confirmToken = generateRandomToken(32);
-    const confirmTokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const resetToken = generateRandomToken(32);
-    const resetTokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const defaultRole = await roleService.findDefaultRole();
-
-    const newUser = await userRepo.createUser({
-      email,
-      password: hashedPassword,
-      firstName: customer.firstName,
-      lastName: customer.lastName,
-      telephoneNumbers: customer.telephoneNumbers || [],
-      addresses: customer.addresses || [],
-      orders: orders,   // ✅ includes all previous orders + the new one
-      role: defaultRole._id,
-      status: "pending",
-      provider: "local",
-      confirmed: false,
-      acceptance: true,
-      confirmToken,
-      confirmTokenExpiration,
-      resetToken,
-      resetTokenExpiration,
-    }, session);
-
-    const userObject = newUser.toObject ? newUser.toObject() : newUser;
-
-    if (ownsSession) await session.commitTransaction();
-
-    // Emit migration events
-    eventEmitter.emit("user:migrated", {
-      email: userObject.email,
-      firstName: userObject.firstName,
-      lastName: userObject.lastName,
-      userId: userObject._id,
-      confirmToken: userObject.confirmToken,
-      resetToken: userObject.resetToken,
-    });
-
+ 
+    // FIX M2: use a random unguessable password (not the public default)
+    // The user must use the reset-token link to set their own password.
+    const hashedPassword = await hashPassword(generateRandomToken(24));
+    const confirmToken   = generateRandomToken(32);
+    const resetToken     = generateRandomToken(32);
+    const defaultRole    = await roleService.findDefaultRole();
+ 
+    const newUser = await userRepo.createUser(
+      {
+        email,
+        password:         hashedPassword,
+        firstName:        customer.firstName,
+        lastName:         customer.lastName,
+        telephoneNumbers: customer.telephoneNumbers || [], // already encrypted
+        addresses:        customer.addresses        || [], // already encrypted
+        orders,
+        role:             defaultRole._id,
+        status:           "pending",
+        confirmed:        false,
+        acceptance:       customer.acceptance ?? false,
+        confirmToken,
+        confirmTokenExpiration: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        resetToken,
+        resetTokenExpiration:   new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+      session
+    );
+ 
+    if (ownsSession) {
+      await session.commitTransaction();
+      // Emit only when we own the session; caller emits otherwise
+      eventEmitter.emit("user:migrated", {
+        email:     newUser.email,
+        firstName: newUser.firstName,
+        userId:    newUser._id.toString(),
+        confirmToken,
+        resetToken,
+        migrated:       true,
+        accountCreated: true,
+      });
+    }
+ 
+    // ── Return full payload — caller decides whether to emit ────────────────
     return {
-      userId: userObject._id.toString(),
-      migrated: true,
-      customerId: customer._id?.toString(),
+      userId:         newUser._id.toString(),
+      email:          newUser.email,
+      firstName:      newUser.firstName,
+      migrated:       true,
+      extended:       false,
       accountCreated: true,
-      email: userObject.email,
-      firstName: userObject.firstName,
-      confirmToken,
+      confirmToken,   // caller uses this to emit when ownsSession = false
       resetToken,
     };
-
   } catch (error) {
     if (ownsSession) await session.abortTransaction();
+    logError("migrateCustomerToUser failed", error);
     throw error;
   } finally {
     if (ownsSession) session.endSession();

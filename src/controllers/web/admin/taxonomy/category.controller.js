@@ -176,57 +176,43 @@ export async function createCategory(req, res, next) {
 }
 
 export async function updateCategory(req, res, next) {
-  try {
-    const { categoryId } = req.params;
-
-    if (req.validationErrors) {
-      logWarn(`[updateCategory] Validacione greške za categoryId=${categoryId}`, {
-        validationErrors: req.validationErrors,
-        userId: req.session?.user?.id || req.session?.user?._id,
-      });
+  const { categoryId } = req.params;
+ 
+  // Validation errors → re-render with form data preserved
+  if (req.validationErrors) {
+    try {
       const category = await categoryService.getCategoryById(categoryId);
       const formData = prepareCategoryFormData(category);
-      return res.render("admin/_form", {
-        pageTitle: `Izmena - ${category.osnovno.naziv}`,
-        pageDescription: category.osnovno.kratakOpis || category.osnovno.naziv,
-        data: { ...formData, errors: req.validationErrors, formData: req.body },
+      return res.render("admin/categories/edit", {
+        pageTitle: "Izmena kategorije",
+        data: {
+          ...formData,
+          errors:   req.validationErrors,
+          formData: req.body,          // ← preserve user's input
+        },
       });
+    } catch (innerError) {
+      return next(innerError);
     }
-
-    const data = { ...req.body };
-
-    // ISPRAVKA: koristi featureImage, ne categoryImage
-    if (req.uploadedFile) {
-      data.featureImage = {
-        img: req.uploadedFile.img,
-        imgDesc: req.body.categoryImageDesc || req.uploadedFile.imgDesc || "",
-      };
-    }
-
-    const sanitizedData = sanitizeCategoryData(data);
-    await categoryService.updateCategory(categoryId, sanitizedData);
-
-    logInfo(`[updateCategory] Kategorija #${categoryId} uspešno ažurirana`, {
-      categoryId,
-      adminId: req.session?.user?.id || req.session?.user?._id,
-    });
-
-    req.flash("success", "Kategorija je uspešno ažurirana");
-    return res.redirect(`/admin/kategorije/detalji/${categoryId}`);
+  }
+ 
+  try {
+    await categoryService.updateCategory(categoryId, req.body, req.file);
+    req.flash("success", "Kategorija je uspešno izmenjena");
+    return res.redirect(`/admin/kategorije/izmena/${categoryId}`);
   } catch (error) {
-    logError(`[updateCategory] Greška pri ažuriranju kategorije`, error, {
-      categoryId: req.params.categoryId,
-      body: req.body,
-      userId: req.session?.user?.id || req.session?.user?._id,
-    });
-    if (error.statusCode === 400 || error.statusCode === 404 || error.statusCode === 409) {
+    if (
+      error.statusCode === 400 ||
+      error.statusCode === 404 ||
+      error.statusCode === 409
+    ) {
+      // Business error → flash + redirect (user already left the form context)
       req.flash("error", error.message);
-      return res.redirect(`/admin/kategorije/izmena/${req.params.categoryId}`);
+      return res.redirect(`/admin/kategorije/izmena/${categoryId}`);
     }
     next(error);
   }
 }
-
 export async function deleteCategory(req, res, next) {
   try {
     const { categoryId } = req.params;

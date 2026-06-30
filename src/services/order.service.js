@@ -81,61 +81,88 @@ export async function getOrderByCancelToken(token) {
   return mapOrderForAdminDetail(order);
 }
 
-export async function confirmOrder(token, orderId, options = {}) {
-  const { session: existingSession, tempOrder: providedTempOrder, ignoreExpiration = false } = options;
-
-  if (!token && !providedTempOrder) validationError("token");
-  if (!orderId) validationError("orderId");
-
+async function migrateOrderFromCustomerToUser(customerId, orderId, session) {
+  const customerData = await customerService.getCustomerRawById(customerId, { session });
+ 
+  const result = await userService.migrateCustomerToUser({
+    customer:          customerData,
+    orderId,
+    autoCreateAccount: true,
+    session,           // outer session — migrateCustomerToUser will NOT commit/emit
+  });
+ 
+  if (!result.userId) return null;
+ 
+  // Re-assign ALL historical orders that still belong to the Customer
+  await orderRepo.updateManyOrders(
+    { buyerId: customerId, buyerModel: "Customer" },
+    { buyerId: result.userId, buyerModel: "User" },
+    session
+  );
+ 
+  await customerService.deleteCustomerAfterMigration(customerId, session);
+ 
+  return result; // full payload (includes confirmToken, resetToken, email, etc.)
+}
+ 
+// ── main: confirmOrder ───────────────────────────────────────────────────────
+export async function confirmOrder(
+  token,
+  tempOrderId,
+  { ignoreExpiration = false, providedTempOrder = null, session: existingSession = null } = {}
+) {
   const ownsSession = !existingSession;
-  const session = existingSession || await mongoose.startSession();
-
+  const session     = existingSession || (await mongoose.startSession());
+ 
   try {
-    if (ownsSession) session.startTransaction();
-
+    // ── Phase 1: verify the token (outside the transaction — read-only) ─────
     const tempOrder = providedTempOrder
       ? providedTempOrder
-      : await tempOrderService.verifyToken(orderId, token, { ignoreExpiration });
-
-    const tempOrderId = tempOrder._id ? tempOrder._id.toString() : tempOrder.temporaryOrderId;
-    if (!tempOrderId) validationError("tempOrderId");
-
+      : await tempOrderService.verifyToken(tempOrderId, token, { ignoreExpiration });
+ 
+    if (ownsSession) session.startTransaction();
+ 
+    // ── Phase 2: build the permanent order ──────────────────────────────────
     const cancelToken = generateRandomToken(16);
-
+ 
     const orderData = {
-      buyerId: tempOrder.buyerId,
+      buyerId:    tempOrder.buyerId,
       buyerModel: tempOrder.buyerModel,
-      buyerInfo: tempOrder.buyerInfo,
-      telephone: tempOrder.telephone,
-      address: tempOrder.address,
-      items: tempOrder.items,
-      subtotal: tempOrder.subtotal,
-      shipping: tempOrder.shipping,
-      coupon: tempOrder.coupon,
-      partner: tempOrder.partner,
+      buyerInfo:  tempOrder.buyerInfo,
+      telephone:  tempOrder.telephone,
+      address:    tempOrder.address,
+      items:      tempOrder.items,
+      subtotal:   tempOrder.subtotal,
+      shipping:   tempOrder.shipping,
+      coupon:     tempOrder.coupon   || {},
+      partner:    tempOrder.partner  || {},
       totalPrice: tempOrder.totalPrice,
-      note: tempOrder.note,
-      status: "confirmed",
-      confirmedAt: new Date(),
+      note:       tempOrder.note     || "",
+      status:     "confirmed",
       cancelToken,
       temporaryOrderId: tempOrderId,
+      confirmedAt: new Date(),
     };
-
-    const created = await orderRepo.createOrder(orderData, session);
+ 
+    const created     = await orderRepo.createOrder(orderData, session);
+    const newOrderId  = created._id.toString();
     const orderObject = created.toObject ? created.toObject() : created;
-    const newOrderId = orderObject._id.toString();
-
+ 
+    // ── Phase 3: ensure phone/address saved to buyer profile ────────────────
     await ensureClientData(
       tempOrder.buyerModel,
       tempOrder.buyerId,
       {
-        telephone: tempOrder.telephone,
-        address: tempOrder.address,
-        orderId: newOrderId,
+        telephone:          tempOrder.telephone,
+        address:            tempOrder.address,
+        orderId:            newOrderId,
+        hasNewTelephone:    tempOrder.hasNewTelephone,
+        hasNewAddress:      tempOrder.hasNewAddress,
       },
       session
     );
-
+ 
+    // ── Phase 4: optional Customer → User migration ─────────────────────────
     let migrationResult = null;
     if (tempOrder.createNewAccount && tempOrder.buyerModel === "Customer") {
       migrationResult = await migrateOrderFromCustomerToUser(
@@ -143,57 +170,63 @@ export async function confirmOrder(token, orderId, options = {}) {
         newOrderId,
         session
       );
-      if (migrationResult) {
-        orderObject.buyerId = migrationResult.userId;
-        orderObject.buyerModel = "User";
-      }
     }
-
-    // ✅ Update coupon usage – prosledi userId ili guestEmail
+ 
+    // ── Phase 5: finalise coupon — update the Phase-1 entry with real orderId
     if (tempOrder.coupon?.couponId) {
       const isUser = tempOrder.buyerModel === "User";
       await couponService.updateCouponUsedByOrder(
         tempOrder.coupon.couponId,
-        isUser ? tempOrder.buyerId : null,
-        isUser ? null : tempOrder.buyerInfo.email,
-        tempOrderId,
-        newOrderId,
+        isUser ? tempOrder.buyerId    : null,
+        isUser ? null                 : tempOrder.buyerInfo?.email,
+        tempOrderId,   // find the Phase-1 usedBy entry by temporaryOrderId
+        newOrderId,    // set the real orderId; clear temporaryOrderId
         session
       );
     }
-
+ 
+    // ── Phase 6: delete temp order (acts as idempotency guard) ─────────────
+    // If two concurrent requests race, the second delete returns null → throws
+    // → transaction aborts → only one Order is ever created.
     await tempOrderService.deleteTemporaryOrder(tempOrderId, { session });
-
+ 
+    // ── Commit ──────────────────────────────────────────────────────────────
     if (ownsSession) await session.commitTransaction();
-
-    if (migrationResult?.migrated) {
+ 
+    // ── Events AFTER commit (never before — no phantom emails on rollback) ──
+    if (migrationResult?.migrated || migrationResult?.extended) {
       eventEmitter.emit("user:migrated", {
-        email: migrationResult.email,
-        firstName: migrationResult.firstName,
-        lastName: migrationResult.lastName,
-        userId: migrationResult.userId,
-        confirmToken: migrationResult.confirmToken,
-        resetToken: migrationResult.resetToken,
+        email:          migrationResult.email,
+        firstName:      migrationResult.firstName,
+        userId:         migrationResult.userId,
+        confirmToken:   migrationResult.confirmToken,
+        resetToken:     migrationResult.resetToken,
+        migrated:       migrationResult.migrated,
+        extended:       migrationResult.extended,
+        accountCreated: migrationResult.accountCreated,
       });
     }
-
+ 
     eventEmitter.emit("order:confirmed", {
-      order: orderObject,
-      orderId: newOrderId,
-      email: tempOrder.buyerInfo.email,
-      firstName: tempOrder.buyerInfo.firstName,
+      order:      orderObject,
+      orderId:    newOrderId,
+      email:      tempOrder.buyerInfo.email,
+      firstName:  tempOrder.buyerInfo.firstName,
       totalPrice: orderObject.totalPrice,
-      cancelToken: orderObject.cancelToken,
+      cancelToken,
     });
-
+ 
     return {
-      id: newOrderId,
-      cancelToken: orderObject.cancelToken,
-      totalPrice: orderObject.totalPrice,
+      id:          newOrderId,
+      email:       tempOrder.buyerInfo.email,
+      firstName:   tempOrder.buyerInfo.firstName,
+      totalPrice:  orderObject.totalPrice,
+      cancelToken,
+      migrated:    !!migrationResult?.migrated,
     };
-
   } catch (error) {
     if (ownsSession) await session.abortTransaction();
+    logError("confirmOrder failed", error, { tempOrderId });
     throw error;
   } finally {
     if (ownsSession) session.endSession();
@@ -231,35 +264,6 @@ async function ensureClientData(buyerModel, buyerId, { telephone, address, order
       { session }
     );
   }
-}
-
-async function migrateOrderFromCustomerToUser(customerId, orderId, session) {
-  const customerData = await customerService.getCustomerRawById(customerId, { session });
-
-  const result = await userService.migrateCustomerToUser({
-    customer: customerData,
-    orderId,
-    autoCreateAccount: true,
-    session,
-  });
-
-  if (!result.userId) return null;
-
-  await orderRepo.updateManyOrders(
-    {
-      buyerId: customerId,
-      buyerModel: "Customer",
-    },
-    {
-      buyerId: result.userId,
-      buyerModel: "User",
-    },
-    session
-  );
-
-  await customerService.deleteCustomerAfterMigration(customerId, session);
-
-  return result;
 }
 
 export async function updateOrderStatusByAdmin(orderId, newStatus) {

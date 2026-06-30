@@ -225,33 +225,27 @@ export async function cart(req, res, next) {
 export async function checkout(req, res, next) {
   try {
     const user = req.session?.user || null;
-    const session = req.session;
-    const data = await shopService.getCheckoutData({ user, session });
+    const data = await shopService.getCheckoutData({ user, session: req.session });
+
+    if (!data.cart?.items?.length) {
+      return res.redirect("/prodavnica/korpa");
+    }
+ 
     const viewData = prepareCheckoutData(data);
-    viewData.prefillCoupon = req.query.coupon || "";
-    viewData.affiliateCode = req.query.ref || "";
-    viewData.messages = req.flash();
-
-    // Log checkout data for debugging (omit sensitive info)
-    logInfo(`[checkout] Checkout stranica učitana`, {
-      userId: user?.id || 'guest',
-      cartItems: data.cart?.items?.length || 0,
-      total: data.cart?.total || 0,
-    });
-
+ 
+    viewData.prefillCoupon  = req.query.coupon || "";
+    viewData.affiliateCode  = req.query.ref    || "";
+ 
     return res.render("shop/checkout", {
-      pageTitle: data.seo?.pageTitle || "Završetak kupovine",
-      pageDescription: data.seo?.pageDescription || "",
-      data: viewData,
+      pageTitle:       "Porudžbina",
+      pageDescription: "Završite vašu kupovinu",
+      data:            viewData,
+      // csrfToken:       res.locals.csrfToken,
     });
   } catch (error) {
-    logError(`[checkout] Greška pri učitavanju checkout-a`, error, {
-      userId: req.session?.user?.id || req.session?.user?._id,
-    });
     next(error);
   }
 }
-
 export async function createOrder(req, res, next) {
   try {
     const user = req.session?.user || null;
@@ -316,71 +310,69 @@ export async function createOrder(req, res, next) {
 export async function confirmOrder(req, res, next) {
   try {
     const { token, orderId } = req.query;
+ 
     if (!token || !orderId) {
-      logWarn(`[confirmOrder] Nedostaje token ili orderId`, {
-        token: token?.substring(0, 8) + '...',
-        orderId,
-        ip: req.ip,
-      });
-      req.flash("error", "Neispravan link za potvrdu");
-      return res.redirect("/");
+      return flashAndRedirect(
+        req, res, "error",
+        "Neispravan link za potvrdu porudžbine.",
+        "/prodavnica"   // ← was "/"
+      );
     }
-    const result = await shopService.confirmOrderByToken(token, orderId);
+ 
+    const result   = await shopService.confirmOrderByToken(token, orderId);
     const viewData = prepareOrderConfirmedData(result);
-
-    logInfo(`[confirmOrder] Porudžbina #${orderId} uspešno potvrđena`, {
-      orderId,
-      token: token.substring(0, 8) + '...',
-      userId: req.session?.user?.id || 'guest',
-      ip: req.ip,
-    });
-
+ 
     return res.render("shop/order-confirmed", {
-      pageTitle: "Porudžbina potvrđena",
+      pageTitle:       "Porudžbina potvrđena",
       pageDescription: "Vaša porudžbina je uspešno potvrđena",
-      data: viewData,
+      data:            viewData,
     });
   } catch (error) {
-    logError(`[confirmOrder] Greška pri potvrđivanju porudžbine`, error, {
-      token: req.query.token?.substring(0, 8) + '...',
-      orderId: req.query.orderId,
-      ip: req.ip,
-    });
-    req.flash("error", error.message);
-    return res.redirect("/");
+    // Operational errors (expired token, already confirmed, not found)
+    if (error.isOperational) {
+      return flashAndRedirect(
+        req, res, "error",
+        error.message,
+        "/prodavnica"   // ← was "/"
+      );
+    }
+    next(error);
   }
 }
 
 export async function cancelOrder(req, res, next) {
   try {
     const { token } = req.query;
+    const user      = req.session?.user || null;
+ 
     if (!token) {
-      logWarn(`[cancelOrder] Nedostaje token za otkazivanje`, {
-        ip: req.ip,
-      });
-      req.flash("error", "Neispravan link za otkazivanje");
-      return res.redirect("/");
+      const redirectTo = user ? "/profil/porudzbine" : "/prodavnica";
+      return flashAndRedirect(
+        req, res, "error",
+        "Neispravan link za otkazivanje.",
+        redirectTo
+      );
     }
+ 
     await shopService.cancelOrder(token);
+ 
     const viewData = prepareOrderCancelledData();
-
-    logInfo(`[cancelOrder] Porudžbina otkazana preko tokena`, {
-      token: token.substring(0, 8) + '...',
-      ip: req.ip,
-    });
-
     return res.render("shop/order-cancelled", {
-      pageTitle: "Porudžbina otkazana",
+      pageTitle:       "Porudžbina otkazana",
       pageDescription: "Vaša porudžbina je otkazana",
-      data: viewData,
+      data:            viewData,
     });
   } catch (error) {
-    logError(`[cancelOrder] Greška pri otkazivanju porudžbine`, error, {
-      token: req.query.token?.substring(0, 8) + '...',
-      ip: req.ip,
-    });
-    req.flash("error", error.message);
-    return res.redirect("/");
+    if (error.isOperational) {
+      const user       = req.session?.user || null;
+      const redirectTo = user ? "/profil/porudzbine" : "/prodavnica";
+      return flashAndRedirect(
+        req, res, "error",
+        error.message,
+        redirectTo   // ← was "/"
+      );
+    }
+    next(error);
   }
 }
 

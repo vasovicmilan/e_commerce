@@ -5,95 +5,102 @@ import { collectValidationErrors } from "./collect.validation.errors.js";
 const isMongoId = (value) => mongoose.Types.ObjectId.isValid(value);
 
 export const validateTemporaryOrderCreate = [
-  // ---- BUYER INFO ----
+  // ── Buyer info ────────────────────────────────────────────────────────────
   body("buyerInfo.firstName")
     .trim()
     .notEmpty().withMessage("Ime je obavezno")
+    .bail()
     .isLength({ min: 2, max: 50 }).withMessage("Ime mora imati između 2 i 50 karaktera"),
-
+ 
   body("buyerInfo.lastName")
     .trim()
     .notEmpty().withMessage("Prezime je obavezno")
+    .bail()
     .isLength({ min: 2, max: 50 }).withMessage("Prezime mora imati između 2 i 50 karaktera"),
-
+ 
   body("buyerInfo.email")
     .trim()
     .notEmpty().withMessage("Email je obavezan")
-    .isEmail().withMessage("Neispravan format email-a")
-    .normalizeEmail({ gmail_remove_dots: false }),
-
-  // ---- TELEFON ----
+    .bail()
+    .isEmail().withMessage("Neispravan format email adrese")
+    .normalizeEmail(),
+ 
+  // ── Telephone ─────────────────────────────────────────────────────────────
   body("telephoneId")
     .optional()
     .custom(isMongoId).withMessage("Neispravan ID telefona"),
-
+ 
   body("newTelephone")
     .optional()
     .trim()
-    .notEmpty().withMessage("Broj telefona je obavezan")
-    .matches(/^[\d+\-\s\/]+$/).withMessage("Neispravan format telefona"),
-
+    .notEmpty().withMessage("Broj telefona ne može biti prazan")
+    .bail()
+    .matches(/^[\d+\-\s\/]+$/).withMessage("Neispravan format broja telefona"),
+ 
   body("hasNewTelephone")
     .optional()
-    .isBoolean().withMessage("hasNewTelephone mora biti boolean"),
-
-  // ---- ADRESA ----
+    .isBoolean().withMessage("Neispravan format polja hasNewTelephone"),
+ 
+  // ── Address ───────────────────────────────────────────────────────────────
   body("addressId")
     .optional()
     .custom(isMongoId).withMessage("Neispravan ID adrese"),
-
+ 
   body("newAddress.city")
     .optional()
     .trim()
     .notEmpty().withMessage("Grad je obavezan"),
-
+ 
   body("newAddress.street")
     .optional()
     .trim()
     .notEmpty().withMessage("Ulica je obavezna"),
-
+ 
   body("newAddress.number")
     .optional()
     .trim()
     .notEmpty().withMessage("Broj je obavezan"),
-
+ 
   body("newAddress.postalCode")
     .optional()
     .trim()
     .notEmpty().withMessage("Poštanski broj je obavezan"),
-
+ 
   body("hasNewAddress")
     .optional()
-    .isBoolean().withMessage("hasNewAddress mora biti boolean"),
-
-  // ---- USLOVI ----
+    .isBoolean().withMessage("Neispravan format polja hasNewAddress"),
+ 
+  // ── Terms acceptance ──────────────────────────────────────────────────────
+  // FIX H4: .bail() added so .custom() does not run when .notEmpty() fails.
+  // This prevents the double-error message on an empty field.
   body("acceptTerms")
     .notEmpty().withMessage("Morate prihvatiti uslove korišćenja")
-    .custom(value => value === 'true' || value === true)
+    .bail()                                                      // ← FIX H4
+    .custom((value) => value === "true" || value === true)
     .withMessage("Morate prihvatiti uslove korišćenja"),
-
-  // ---- OSTALA POLJA ----
+ 
+  // ── Optional fields ───────────────────────────────────────────────────────
   body("note")
     .optional()
     .trim()
-    .isLength({ max: 1000 }).withMessage("Napomena može imati najviše 1000 karaktera"),
-
+    .isLength({ max: 1000 }).withMessage("Napomena ne sme biti duža od 1000 karaktera"),
+ 
   body("createNewAccount")
     .optional()
-    .isBoolean().withMessage("createNewAccount mora biti boolean"),
-
+    .isBoolean().withMessage("Neispravan format polja createNewAccount"),
+ 
   body("couponCode")
     .optional()
     .trim(),
-
+ 
   body("appliedCoupon")
     .optional()
     .trim(),
-
+ 
+  // ── Collect errors ────────────────────────────────────────────────────────
   collectValidationErrors,
 ];
 
-// 🔥 Validacija za korisnika – token OBAVEZAN
 export const validateTokenVerification = [
   body("token")
     .trim()
@@ -107,7 +114,6 @@ export const validateTokenVerification = [
   collectValidationErrors,
 ];
 
-// 🔥 Validacija za admina – token NIJE OBAVEZAN
 export const validateAdminConfirm = [
   body("orderId")
     .optional()

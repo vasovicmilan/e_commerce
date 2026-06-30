@@ -296,200 +296,188 @@ export async function applyCoupon(code, cartTotal, userId = null, guestEmail = n
 }
 
 export async function createCheckoutTemporaryOrder(data, { user, session: expressSession }) {
-  const cart = await getCart({ user, session: expressSession });
+  // ── 1. Fetch cart ──────────────────────────────────────────────────────────
+  const cart  = await getCart({ user, session: expressSession });
   const items = cart.items || [];
-
   if (!items.length) badRequest("Korpa je prazna");
-
+ 
+  // ── 2. Fetch logged-in buyer profile (for saved phones/addresses) ──────────
   let profile = null;
-  let userId = null;
+  let userId  = null;
   if (user) {
-    userId = user._id || user.id;
+    userId  = user._id?.toString() || user.id;
     profile = await userService.getMyProfile(userId);
   }
-
+ 
+  // ── 3. Resolve telephone ──────────────────────────────────────────────────
+  const hasNewTelephone = data.hasNewTelephone === "true" || data.hasNewTelephone === true;
   let telephone = null;
-  const hasNewTelephone = data.hasNewTelephone === 'true' || data.hasNewTelephone === true;
+ 
   if (hasNewTelephone) {
-    telephone = data.newTelephone;
+    telephone = data.newTelephone?.trim();
+    if (!telephone) validationError("telephone");
   } else if (data.telephoneId) {
-    if (!profile) badRequest("Niste ulogovani, ne možete koristiti sačuvani telefon");
-    const found = profile.kontakt?.telefoni?.find(p => String(p.id) === String(data.telephoneId));
-    if (!found) badRequest("Sačuvani telefon nije pronađen");
-    telephone = found.value;
+    if (!profile) badRequest("Niste ulogovani ili profil nije dostupan");
+    const saved = (profile.kontakt?.telefoni || []).find(
+      (p) => String(p.id) === String(data.telephoneId)
+    );
+    if (!saved) badRequest("Sačuvani telefon nije pronađen");
+    telephone = saved.value; // decrypted
   }
-
+ 
   if (!telephone) validationError("telephone");
-
+ 
+  // ── 4. Resolve address ────────────────────────────────────────────────────
+  const hasNewAddress = data.hasNewAddress === "true" || data.hasNewAddress === true;
   let address = null;
-  const hasNewAddress = data.hasNewAddress === 'true' || data.hasNewAddress === true;
+ 
   if (hasNewAddress) {
-    address = {
-      city: data.newAddress?.city,
-      street: data.newAddress?.street,
-      number: data.newAddress?.number,
-      postalCode: data.newAddress?.postalCode,
-    };
-    if (!address.city || !address.street || !address.number || !address.postalCode) {
-      validationError("address");
-    }
+    const { city, street, number, postalCode } = data.newAddress || {};
+    if (!city || !street || !number || !postalCode) validationError("address");
+    address = { city: city.trim(), street: street.trim(), number: number.trim(), postalCode: postalCode.trim() };
   } else if (data.addressId) {
-    if (!profile) badRequest("Niste ulogovani, ne možete koristiti sačuvanu adresu");
-    const found = profile.kontakt?.adrese?.find(a => String(a.id) === String(data.addressId));
-    if (!found) badRequest("Sačuvana adresa nije pronađena");
-    address = {
-      city: found.city,
-      street: found.street,
-      number: found.number,
-      postalCode: found.postalCode,
-    };
+    if (!profile) badRequest("Niste ulogovani ili profil nije dostupan");
+    const saved = (profile.kontakt?.adrese || []).find(
+      (a) => String(a.id) === String(data.addressId)
+    );
+    if (!saved) badRequest("Sačuvana adresa nije pronađena");
+    address = { city: saved.city, street: saved.street, number: saved.number, postalCode: saved.postalCode };
   }
-
+ 
   if (!address) validationError("address");
-
-  data.telephone = telephone;
-  data.address = address;
-
-  if (!data.buyerInfo?.email) validationError("email");
-
-  let buyerId, buyerModel, buyerInfo;
-
+ 
+  // ── 5. Build buyerInfo and resolve existing buyer identity (reads only) ────
+  let buyerInfo = {};
+  let buyerId   = null;
+  let buyerModel = null;
+  let isNewCustomer = false; // flag: creation deferred into the transaction
+ 
   if (user) {
-    buyerId = userId;
+    buyerId    = userId;
     buyerModel = "User";
-    buyerInfo = {
-      firstName: profile?.osnovno?.ime || data.buyerInfo.firstName,
-      lastName: profile?.osnovno?.prezime || data.buyerInfo.lastName,
-      email: profile?.osnovno?.email || data.buyerInfo.email,
+    buyerInfo  = {
+      firstName: profile.osnovno.ime,
+      lastName:  profile.osnovno.prezime,
+      email:     profile.osnovno.email,
     };
   } else {
     buyerInfo = {
-      firstName: data.buyerInfo.firstName,
-      lastName: data.buyerInfo.lastName,
-      email: data.buyerInfo.email,
+      firstName: (data.buyerInfo?.firstName || "").trim(),
+      lastName:  (data.buyerInfo?.lastName  || "").trim(),
+      email:     (data.buyerInfo?.email     || "").trim().toLowerCase(),
     };
-
+ 
+    // Try to find an existing User first
     const existingUser = await userService.findUserByEmail(buyerInfo.email);
     if (existingUser) {
-      buyerId = existingUser._id;
+      buyerId    = existingUser._id.toString();
       buyerModel = "User";
     } else {
+      // Try to find an existing Customer
       const existingCustomer = await customerService.findCustomerByEmail(buyerInfo.email);
       if (existingCustomer) {
-        buyerId = existingCustomer._id;
+        buyerId    = existingCustomer._id.toString();
         buyerModel = "Customer";
       } else {
-        const newCustomer = await customerService.resolveCustomerForOrder(
-          { ...buyerInfo, acceptance: true },
-          {}
-        );
-        buyerId = newCustomer.customer._id || newCustomer.customer;
-        buyerModel = "Customer";
+        // No entity found — we will create a new Customer INSIDE the transaction
+        buyerModel    = "Customer";
+        isNewCustomer = true;
+        // buyerId will be set after creation inside the transaction
       }
     }
   }
-
-  let hasNewTelephoneFlag = false;
-  let hasNewAddressFlag = false;
-
-  if (user) {
-    const existingPhones = profile?.kontakt?.telefoni || [];
-    const existingAddresses = profile?.kontakt?.adrese || [];
-    hasNewTelephoneFlag = !existingPhones.some((p) => p.value === telephone);
-    hasNewAddressFlag = !existingAddresses.some(
-      (a) => a.street === address.street && a.number === address.number
-    );
-  } else {
-    hasNewTelephoneFlag = true;
-    hasNewAddressFlag = true;
-  }
-
-  const orderItems = items.map((item) => ({
-    itemId: item.itemId,
-    variationId: item.variationId,
-    title: item.title,
-    size: item.size,
-    color: item.color,
-    price: item.price,
-    quantity: item.quantity,
-    image: item.image,
-    affiliateCode: item.affiliateCode || item.code || null,
-  }));
-
-  const subtotal = orderItems.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
-
+ 
+  // ── 6. Validate coupon (read-only — before transaction) ───────────────────
   let couponObject = null;
-  const couponCode = data.appliedCoupon || data.couponCode || null;
-  if (couponCode && couponCode.trim()) {
-    const code = couponCode.trim().toUpperCase();
-    // ✅ Prosleđujemo guestEmail (uvek je dostupan preko buyerInfo.email)
-    await couponService.validateCouponForCheckout(code, subtotal, userId, buyerInfo.email);
-
-    const couponDoc = await couponService.getCouponRawByCode(code);
-    if (!couponDoc) badRequest("Kupon nije pronađen");
-
-    let discountAmount = 0;
-    if (couponDoc.discountType === "percentage") {
-      discountAmount = (subtotal * couponDoc.discountValue) / 100;
-    } else {
-      discountAmount = Math.min(couponDoc.discountValue, subtotal);
-    }
-    discountAmount = Math.round(discountAmount * 100) / 100;
-
-    couponObject = {
-      couponId: couponDoc._id,
-      code: couponDoc.code,
-      discount: discountAmount,
-    };
+  const couponCode = (data.appliedCoupon || data.couponCode || "").trim();
+  if (couponCode) {
+    const couponUserId = buyerModel === "User" ? buyerId : null;
+    const cartTotal    = items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
+      0
+    );
+    couponObject = await couponService.validateCouponForCheckout(
+      couponCode,
+      cartTotal,
+      couponUserId,
+      buyerInfo.email
+    );
   }
-
+ 
+  // ── 7. Open transaction — ALL writes happen here ──────────────────────────
   const mongoSession = await mongoose.startSession();
   mongoSession.startTransaction();
-
+ 
   try {
-    const result = await tempOrderService.createTemporaryOrder({
-      buyerId,
-      buyerModel,
-      buyerInfo,
-      telephone: data.telephone,
-      address: data.address,
-      items: orderItems,
-      shipping: data.shipping || DEFAULT_SHIPPING_PRICE,
-      coupon: couponObject,
-      partner: data.partner || { partnerId: null, source: "direct" },
-      note: data.note || "",
-      createNewAccount: data.createNewAccount || false,
-      hasNewTelephone: hasNewTelephoneFlag,
-      hasNewAddress: hasNewAddressFlag,
-    }, { session: mongoSession });
-
-    // ✅ markCouponAsUsed sa userId i/ili guestEmail
+    // ── 7a. Create Customer INSIDE the transaction (C2 fix) ─────────────────
+    if (isNewCustomer) {
+      const newCustomer = await customerService.resolveCustomerForOrder(
+        { ...buyerInfo, acceptance: data.acceptTerms === "true" || data.acceptTerms === true },
+        { session: mongoSession } // ← inside the transaction
+      );
+      buyerId = (newCustomer.customer._id || newCustomer.customer).toString();
+    }
+ 
+    // ── 7b. Create TemporaryOrder (decreases stock inside) ───────────────────
+    const result = await tempOrderService.createTemporaryOrder(
+      {
+        buyerId,
+        buyerModel,
+        buyerInfo,
+        telephone,
+        address,
+        items,
+        coupon: couponObject
+          ? { couponId: couponObject.id, code: couponObject.code, discount: couponObject.discount }
+          : null,
+        partner:          data.partner          || null,
+        note:             data.note             || "",
+        createNewAccount: data.createNewAccount === "true" || data.createNewAccount === true,
+        hasNewTelephone,
+        hasNewAddress,
+      },
+      { session: mongoSession }
+    );
+ 
+    // ── 7c. Mark coupon used (Phase 1) ────────────────────────────────────────
     if (couponObject) {
       await couponService.markCouponAsUsed(
-        couponObject.couponId,
-        result.id,
-        userId,                // može biti null za goste
-        buyerInfo.email,       // uvek postoji, koristi se kao guestEmail kada nema userId
+        couponObject.id,
+        result.id,        // temporaryOrderId
+        buyerModel === "User" ? buyerId : null,
+        buyerInfo.email,
         mongoSession
       );
     }
-
+ 
+    // ── 7d. Clear cart for logged-in users INSIDE the transaction ─────────────
+    if (user) {
+      await userRepo.setCart(userId, [], mongoSession);
+    }
+ 
     await mongoSession.commitTransaction();
-
-    await clearCart({ user, session: expressSession });
+ 
+    // ── 8. Clear guest session cart AFTER commit (session IO — cannot be in TX)
     if (!user) {
+      expressSession.cart      = [];
+      expressSession.cartCount = 0;
       await new Promise((resolve, reject) => {
-        expressSession.save((err) => {
-          if (err) reject(err);
-          else resolve();
-        });
+        expressSession.save((err) => (err ? reject(err) : resolve()));
       });
     }
-
+ 
+    // ── 9. Emit event (always after commit) ───────────────────────────────────
+    eventEmitter.emit("temporary-order:created", {
+      orderId:   result.id,
+      email:     buyerInfo.email,
+      firstName: buyerInfo.firstName,
+      token:     result.verificationToken,
+    });
+ 
     return result;
-
   } catch (error) {
     await mongoSession.abortTransaction();
+    logError("createCheckoutTemporaryOrder failed", error);
     throw error;
   } finally {
     mongoSession.endSession();

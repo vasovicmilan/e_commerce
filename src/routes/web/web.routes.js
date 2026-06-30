@@ -67,13 +67,13 @@ router.use("/admin", webAuthMiddleware, adminRoutes);
 router.use("/profil", webAuthMiddleware, userRoutes);
 
 
-router.get("/seed/roles", async (req, res) => {
-  try {
-    await seedRoles();
-    res.json({ success: true, message: "Roles seeded successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// router.get("/seed/roles", async (req, res) => {
+//   try {
+//     await seedRoles();
+//     res.json({ success: true, message: "Roles seeded successfully" });
+//   } catch (error) {
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
 
 export default router;
