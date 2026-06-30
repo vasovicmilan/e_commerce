@@ -1,6 +1,6 @@
 <%
-subject = `Dobrodošli u ${SITE_NAME} - Potvrdite vaš nalog`;
-body = `
+const subject = `Dobrodošli u ${SITE_NAME} - Potvrdite vaš nalog`;
+const body = `
   <p>Zdravo ${firstName},</p>
   <p>Hvala vam što ste kreirali nalog na ${SITE_NAME}. Da biste ga aktivirali, kliknite na dugme ispod:</p>
   <p style="text-align: center; margin: 25px 0;">
@@ -11,4 +11,4 @@ body = `
   <p style="margin-top: 25px; color: #999; font-size: 14px;">Link je validan 24 sata. Ako niste vi kreirali ovaj nalog, ignorišite ovaj email.</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

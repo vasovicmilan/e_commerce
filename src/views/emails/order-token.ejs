@@ -1,6 +1,6 @@
 <%
-subject = `Potvrdite vašu porudžbinu - ${SITE_NAME}`;
-body = `
+const subject = `Potvrdite vašu porudžbinu - ${SITE_NAME}`;
+const body = `
   <p>Zdravo ${firstName},</p>
   <p>Kreirali ste porudžbinu na ${SITE_NAME}. Da biste je potvrdili, kliknite na dugme ispod:</p>
   <p style="text-align: center; margin: 25px 0;">
@@ -12,4 +12,4 @@ body = `
   <p style="color: #999; font-size: 14px;">Ako ne potvrdite porudžbinu, biće automatski otkazana nakon isteka linka.</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

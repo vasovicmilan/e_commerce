@@ -1,6 +1,6 @@
 <%
-subject = campaign.subject || `Novosti iz ${SITE_NAME}`;
-body = `
+const subject = campaign.subject || `Novosti iz ${SITE_NAME}`;
+const body = `
   <p>Zdravo ${firstName || ''},</p>
   ${campaign.content || '<p>Pogledajte naše najnovije proizvode i akcije.</p>'}
   <p style="text-align: center; margin: 25px 0;">
@@ -13,4 +13,4 @@ body = `
   </p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

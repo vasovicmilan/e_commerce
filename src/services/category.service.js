@@ -48,8 +48,6 @@ export async function getCategoryById(categoryId) {
   const category = await categoryRepo.findCategoryById(categoryId);
   if (!category) notFound("Kategorija");
 
-  console.log("OVO je service:")
-  console.log(category);
   return mapCategoryForAdminDetail(category);
 }
 

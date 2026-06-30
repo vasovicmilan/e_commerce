@@ -1,6 +1,6 @@
 <%
-subject = `Nova kontakt poruka od ${contact.firstName || contact.ime || 'korisnika'} - ${SITE_NAME}`;
-body = `
+const subject = `Nova kontakt poruka od ${contact.firstName || contact.ime || 'korisnika'} - ${SITE_NAME}`;
+const body = `
   <p>Poštovani,</p>
   <p>Primljena je nova kontakt poruka.</p>
   <p><strong>Ime:</strong> ${contact.firstName || contact.ime || ''} ${contact.lastName || contact.prezime || ''}</p>
@@ -13,4 +13,4 @@ body = `
   <p style="color:#999; font-size:14px;">Ovo je automatska poruka za administratore.</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

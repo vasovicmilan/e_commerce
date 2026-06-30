@@ -1,10 +1,10 @@
 <%
-subject = `Nalog je deaktiviran - ${SITE_NAME}`;
-body = `
+const subject = `Nalog je deaktiviran - ${SITE_NAME}`;
+const body = `
   <p>Zdravo ${firstName},</p>
   <p>Vaš nalog na ${SITE_NAME} je deaktiviran.</p>
   <p>Ako smatrate da je ovo greška, kontaktirajte nas na <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>.</p>
   <p style="margin-top:25px; color:#999; font-size:14px;">Ovo je automatska poruka, molimo ne odgovarajte na nju.</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

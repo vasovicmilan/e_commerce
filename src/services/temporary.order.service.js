@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import eventEmitter from "../events/event.emitter.js";
 import * as tempOrderRepo from "../repositories/temporary.order.repository.js";
 import * as itemService from "./item.service.js";
-import * as couponService from "./coupon.service.js"; // ✅ DODATO
+import * as couponService from "./coupon.service.js";
 import { encrypt, generateRandomToken } from "./crypto.service.js";
 import { encryptTelephone, encryptAddress } from "../utils/encryption.util.js";
 import {

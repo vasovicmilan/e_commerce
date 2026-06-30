@@ -23,12 +23,9 @@ import fs from 'fs';
 async function renderTemplate(templateName, data) {
   try {
     const templatePath = path.join(TEMPLATES_PATH, `${templateName}.ejs`);
-    logInfo(`[EMAIL] 📄 Rendering template: ${templateName} (${templatePath})`);
 
-    // Učitaj svež sadržaj sa diska
     const templateContent = fs.readFileSync(templatePath, 'utf8');
 
-    // Renderuj sa pravim opcijama za include
     const html = ejs.render(
       templateContent,
       {
@@ -45,8 +42,6 @@ async function renderTemplate(templateName, data) {
       }
     );
 
-    // Opcioni log za proveru
-    console.log("OVO OVDE: " + JSON.stringify(html.substring(0, 300)));
     return html;
   } catch (error) {
     logError(`[EMAIL] Template error (${templateName})`, error);
@@ -154,9 +149,6 @@ export async function sendOrderConfirmationEmail(user, rawOrder, pdfBuffer = nul
       contentType: "application/pdf",
     });
   }
-
-  // Loguj samo deo HTML-a za proveru (ukloni u produkciji)
-  logInfo(`[EMAIL] Order confirmation HTML preview (first 300 chars): ${html}`);
 
   return sendEmail({
     to: user.email,

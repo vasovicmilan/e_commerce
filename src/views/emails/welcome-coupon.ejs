@@ -1,6 +1,6 @@
 <%
-subject = `Dobrodošli u ${SITE_NAME} - Vaš poklon kupon je unutra! 🎁`;
-body = `
+const subject = `Dobrodošli u ${SITE_NAME} - Vaš poklon kupon je unutra! 🎁`;
+const body = `
   <p>Zdravo ${firstName},</p>
   <p>Dobrodošli u ${SITE_NAME}! Kao znak dobrodošlice, poklanjamo vam kupon za popust:</p>
   <div style="background-color: #fce4ec; border: 2px dashed #e91e63; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0;">
@@ -15,4 +15,4 @@ body = `
   <p style="color: #999; font-size: 14px;">Unesite kod na checkout stranici da biste ostvarili popust.</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

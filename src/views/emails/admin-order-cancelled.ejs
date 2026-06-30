@@ -1,6 +1,6 @@
 <%
-subject = `Porudžbina #${(order.id || '').slice(-6)} je otkazana - ${SITE_NAME}`;
-body = `
+const subject = `Porudžbina #${(order.id || '').slice(-6)} je otkazana - ${SITE_NAME}`;
+const body = `
   <p>Poštovani,</p>
   <p>Porudžbina <strong>#${(order.id || '').slice(-6)}</strong> je otkazana.</p>
   <p><strong>Kupac:</strong> ${order.buyer?.firstName || ''} ${order.buyer?.lastName || ''}</p>
@@ -11,4 +11,4 @@ body = `
   <p style="color:#999; font-size:14px;">Ovo je automatska poruka za administratore.</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

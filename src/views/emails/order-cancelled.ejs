@@ -1,10 +1,10 @@
 <%
-subject = `Porudžbina #${(order.id || '').slice(-6)} je otkazana - ${SITE_NAME}`;
-body = `
+const subject = `Porudžbina #${(order.id || '').slice(-6)} je otkazana - ${SITE_NAME}`;
+const body = `
   <p>Zdravo ${firstName},</p>
   <p>Vaša porudžbina <strong>#${(order.id || '').slice(-6)}</strong> je otkazana.</p>
   <p>Ako je porudžbina već plaćena, iznos će vam biti vraćen u roku od 3-7 radnih dana.</p>
   <p style="margin-top: 25px; color: #999; font-size: 14px;">Za sva pitanja, kontaktirajte nas na ${SUPPORT_EMAIL}</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

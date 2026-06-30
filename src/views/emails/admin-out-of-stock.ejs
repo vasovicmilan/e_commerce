@@ -1,6 +1,6 @@
 <%
-subject = `Nema na stanju: ${item.title || item.naziv || 'artikal'} - ${SITE_NAME}`;
-body = `
+const subject = `Nema na stanju: ${item.title || item.naziv || 'artikal'} - ${SITE_NAME}`;
+const body = `
   <p>Poštovani,</p>
   <p>Artikal <strong>${item.title || item.naziv}</strong> je rasprodat.</p>
   <p style="text-align:center; margin:25px 0;">
@@ -9,4 +9,4 @@ body = `
   <p style="color:#999; font-size:14px;">Ovo je automatska poruka za administratore.</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>

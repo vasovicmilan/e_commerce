@@ -1,6 +1,6 @@
 <%
-subject = `Status porudžbine #${(order.id || '').slice(-6)} je promenjen - ${SITE_NAME}`;
-body = `
+const subject = `Status porudžbine #${(order.id || '').slice(-6)} je promenjen - ${SITE_NAME}`;
+const body = `
   <p>Zdravo ${firstName},</p>
   <p>Status vaše porudžbine <strong>#${(order.id || '').slice(-6)}</strong> je ažuriran.</p>
   <p>Novi status: <strong>${order.statusText || order.status}</strong></p>
@@ -10,4 +10,4 @@ body = `
   <p style="color:#999; font-size:14px;">Za sva pitanja, kontaktirajte nas na ${SUPPORT_EMAIL}</p>
 `;
 %>
-<%- include("_layout") %>
+<%- include("_layout", { subject, body }) %>
